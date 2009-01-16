@@ -22,6 +22,8 @@
 	}
 	
 	$.kvo = {
+		propertyRevision: 0,
+		bindings: {},
 		encode: function(obj){
 			if (typeof obj != "object" || obj.encode) {
 				return obj;
@@ -33,9 +35,12 @@
 				return this[key].call(this, key, value);
 			} else {
 				if (value !== undefined) {
-					var old = this[key];
-					this[key] = value;
-					$(this).trigger(key + "-changed", {oldValue: old, newValue: this[key]});
+					if (this[key] !== value) {
+						var old = this[key];
+						this[key] = value;
+						this.propertyRevision++;
+						$(this).trigger(key + "-changed", {oldValue: old, newValue: this[key]});
+					}
 				}
 				
 				return $.kvo.encode(this[key]);
@@ -67,6 +72,35 @@
 			} else {
 				$(this).bind(path+"-changed", fn);
 			}
+		},
+		connect: function(attr, to, toAttr) {
+			var from = this;
+			var binding = {
+				from: this,
+				to: to,
+				fromAttr: attr,
+				toAttr: toAttr,
+				lastToPropertyRevision: 0,
+				lastFromPropertyRevision: 0
+			};
+			from.bindings[$.data(to) + toAttr] = binding;
+			from.observe(attr, function(){
+				if (from.propertyRevision <= binding.lastFromPropertyRevision) {
+					return;
+				}
+				binding.lastFromPropertyRevision = from.propertyRevision;
+				to.valueForKeyPath(toAttr, from.valueForKeyPath(attr));
+			});
+			to.observe(toAttr, function(){
+				if (to.propertyRevision <= binding.lastToPropertyRevision) {
+					return;
+				}
+				binding.lastToPropertyRevision = to.propertyRevision;
+				from.valueForKeyPath(attr, to.valueForKeyPath(toAttr));
+			});
+			binding.lastToPropertyRevision = to.propertyRevision;
+			binding.lastFromPropertyRevision = from.propertyRevision;
+			from.valueForKeyPath(attr, to.valueForKeyPath(toAttr));
 		}
 	}
 })(jQuery);
