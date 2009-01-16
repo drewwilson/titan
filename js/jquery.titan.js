@@ -29,13 +29,13 @@
 			return $.extend(obj, $.kvo);
 		},
 		valueForKey: function(key, value){
-			if ($.isFunction(this.key)) {
+			if ($.isFunction(this[key])) {
 				return this[key].call(this, key, value);
 			} else {
 				if (value !== undefined) {
 					var old = this[key];
 					this[key] = value;
-					$(this).trigger(key + "-changed", {oldValue: old, newValue: this.key});
+					$(this).trigger(key + "-changed", {oldValue: old, newValue: this[key]});
 				}
 				
 				return $.kvo.encode(this[key]);
