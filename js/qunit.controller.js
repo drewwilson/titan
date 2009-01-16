@@ -40,3 +40,20 @@ test("Test controller.array.create", function(){
 	var list = $.controller.array("list");
 	ok(list, "list controller instantiated");
 });
+
+test("Test controller.array.destroy", function(){
+	expect(3);
+	stop();
+	$("#test-list").ajaxStop(function(){
+		equals(list.valueForKey("contents").length, 5, "count list objects");
+		$(this).unbind("ajaxStop");
+		$(this).ajaxStop(function(){
+			equals(list.valueForKey("contents").length, 4, "count list objects");
+			$(this).unbind("ajaxStop");
+			start();
+		});
+		list.destroy({name: "deleteme"});
+	});
+	var list = $.controller.array("list");
+	ok(list, "list controller instantiated");
+});

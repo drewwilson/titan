@@ -181,16 +181,13 @@
 		},
 		destroy: function(id) {
 			var that = this;
+			var data = {};
+			data[that.root] = id;
 			$.ajax({
-				url : that.url + "/" + id,
-				contentType : "application/json",
-				dataType : "json",
-				data: {id: id},
+				url : $.controller.defaults.url + "?" + $.serialize(data),
 				type : "DELETE",
 				success : function(data) {
-					$($.titan.models[model]).each(function(){
-						this.reload();
-					});
+					that.retrieve();
 				}
 			});
 		},

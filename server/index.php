@@ -42,6 +42,19 @@ switch($method) {
 	case "PUT":
 		break;
 	case "DELETE":
+		foreach($params as $key => $value) {
+			$data = file_get_contents("data/$key.json");
+			$data = json_decode($data);
+			$newdata = array();
+			foreach(array_keys($data) as $idx) {
+				if ($data[$idx]->name != $value['name']) {
+					$newdata[] = $data[$idx];
+				}
+			}
+			$f = fopen("data/$key.json", "w");
+			fwrite($f, json_encode($newdata));
+			fclose($f);
+		}
 		break;
 }
 
