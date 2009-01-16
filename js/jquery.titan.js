@@ -105,6 +105,44 @@
 	}
 })(jQuery);
 
+(function($){
+	$.serialize = function(object){
+		var values = []; 
+		var prefix = '';
+		values = $.serialize.recursive_serialize(object, values, prefix);
+		param_string = values.join('&');
+		return param_string;
+	};
+	$.serialize.recursive_serialize = function(object, values, prefix){
+		for (key in object) {
+			if (typeof object[key] == 'object') {
+				if (prefix.length > 0) {
+					prefix += '['+key+']';
+				} else {
+					prefix += key;
+				}
+				values = $.serialize.recursive_serialize(object[key], values, prefix);
+				prefixes = prefix.split('[');
+				if (prefixes.length > 1) {
+					prefix = prefixes.slice(0,prefixes.length-1).join('[');
+				} else {
+					prefix = prefixes[0];
+				}
+			} else {
+				value = encodeURIComponent(object[key]);
+				if (prefix.length > 0) {
+					prefixed_key = prefix+'['+key+']';
+				} else {
+					prefixed_key = key;
+				}
+				prefixed_key = encodeURIComponent(prefixed_key);
+				if (value) values.push(prefixed_key + '=' + value);
+			}
+		}
+		return values;
+	};
+})(jQuery);
+
 // Controller Support
 (function($){
 	$.controller = {
@@ -112,16 +150,8 @@
 		array: function(root){
 			if (this.constructor == $.controller.array) {
 				var that = this;
-				$.ajax({
-					url : $.controller.defaults.url,
-					contentType : "application/json",
-					dataType : "json",
-					type : "GET",
-					data: root,
-					success : function(data) {
-						that.valueForKey("contents", data);
-					}
-				});
+				this.root = root;
+				this.retrieve();
 			} else {
 				return $.kvo.encode(new $.controller.array(root));
 			}
@@ -133,4 +163,64 @@
 			}
 		}
 	};
+	$.extend($.controller.array.prototype, {
+		root: "",
+		create: function(obj) {
+			var that = this;
+			console.log(that);
+			var data = {};
+			data[that.root] = obj;
+			$.ajax({
+				url : $.controller.defaults.url,
+				data : $.serialize(data),
+				type : "POST",
+				success : function(data) {
+					that.retrieve();
+				}
+			});
+		},
+		destroy: function(id) {
+			var that = this;
+			$.ajax({
+				url : that.url + "/" + id,
+				contentType : "application/json",
+				dataType : "json",
+				data: {id: id},
+				type : "DELETE",
+				success : function(data) {
+					$($.titan.models[model]).each(function(){
+						this.reload();
+					});
+				}
+			});
+		},
+		update: function(obj) {
+			var that = this;
+			$.ajax({
+				url : that.url,
+				contentType : "application/json",
+				data : obj,
+				dataType : "json",
+				type : "PUT",
+				success : function(data) {
+					$($.titan.models[model]).each(function(){
+						this.reload();
+					});
+				}
+			});
+		},
+		retrieve: function() {
+			var that = this;
+			$.ajax({
+				url : $.controller.defaults.url,
+				contentType : "application/json",
+				dataType : "json",
+				type : "GET",
+				data: this.root,
+				success : function(data) {
+					that.valueForKey("contents", data);
+				}
+			});
+		}
+	});
 })(jQuery);
