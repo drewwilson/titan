@@ -182,7 +182,7 @@
 		destroy: function(id) {
 			var that = this;
 			var data = {};
-			data[that.root] = id;
+			data[that.root] = {id: id};
 			$.ajax({
 				url : $.controller.defaults.url + "?" + $.serialize(data),
 				type : "DELETE",
@@ -193,16 +193,14 @@
 		},
 		update: function(obj) {
 			var that = this;
+			var data = {};
+			data[that.root] = obj;
 			$.ajax({
-				url : that.url,
+				url : $.controller.defaults.url + "?" + $.serialize(data),
 				contentType : "application/json",
-				data : obj,
-				dataType : "json",
 				type : "PUT",
 				success : function(data) {
-					$($.titan.models[model]).each(function(){
-						this.reload();
-					});
+					that.retrieve();
 				}
 			});
 		},
