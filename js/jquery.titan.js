@@ -53,6 +53,9 @@
 			while(keys.length > 1) {
 				key = keys.shift();
 				obj = obj.valueForKey(key);
+				if (obj === undefined) {
+					return undefined;
+				}
 			}
 			key = keys.shift();
 			return obj.valueForKey(key, value);
@@ -105,6 +108,7 @@
 	}
 })(jQuery);
 
+//Recursive encodeURIComponent
 (function($){
 	$.serialize = function(object){
 		var values = []; 
@@ -147,13 +151,15 @@
 (function($){
 	$.controller = {
 		defaults: {},
-		array: function(root){
+		array: function(root, master, attr){
 			if (this.constructor == $.controller.array) {
 				var that = this;
 				this.root = root;
+				this.master = master;
+				this.attr = attr;
 				this.retrieve();
 			} else {
-				return $.kvo.encode(new $.controller.array(root));
+				return $.kvo.encode(new $.controller.array(root, master, attr));
 			}
 		},
 		object:  function(){
@@ -167,7 +173,6 @@
 		root: "",
 		create: function(obj) {
 			var that = this;
-			console.log(that);
 			var data = {};
 			data[that.root] = obj;
 			$.ajax({
@@ -206,12 +211,29 @@
 		},
 		retrieve: function() {
 			var that = this;
+			var data = {};
+			data = that.root;
+			if (that.master) {
+				console.log("asdf");
+				var selection = that.master.valueForKey("selection");
+				data = {};
+				data[that.root] = {};
+				
+				if (selection) {
+					data[that.root][that.attr] = selection.valueForKey("id");
+				} else {
+					console.log(that);
+					$.kvo.encode(that).valueForKey("contents", []);
+					return;
+				}
+				data = $.serialize(data);
+			}
 			$.ajax({
 				url : $.controller.defaults.url,
 				contentType : "application/json",
 				dataType : "json",
 				type : "GET",
-				data: this.root,
+				data: data,
 				success : function(data) {
 					that.valueForKey("contents", data);
 				}
@@ -219,3 +241,4 @@
 		}
 	});
 })(jQuery);
+
