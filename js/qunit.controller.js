@@ -80,7 +80,7 @@ test("Test controller.array.update", function(){
 });
 
 test("Test controller.array.conditions", function(){
-	stop();
+	stop(1000);
 	var master, detail;
 	$("#test-list").ajaxStop(function(){
 		$(this).unbind("ajaxStop");
@@ -88,18 +88,16 @@ test("Test controller.array.conditions", function(){
 			$(this).unbind("ajaxStop");
 			$(this).ajaxStop(function(){
 				$(this).unbind("ajaxStop");
-				equals(detail.valueForKey("contents").length, 1, "count detail objects");
+				equals(detail.valueForKey("contents").length, 1, "master with one details");
 				start();
 			});
-			equals(detail.valueForKey("contents").length, 0, "count detail objects");
+			equals(detail.valueForKey("contents").length, 0, "master with no details");
 			master.valueForKey("selection", master.valueForKey("contents")[1]);
-			detail.retrieve();
 		});
 		equals(master.valueForKey("contents").length, 4, "count master objects");
 		detail = $.controller.array("detail", master, "parent_id");
-		equals(detail.valueForKey("contents").length, 0, "count detail objects");
+		equals(detail.valueForKey("contents").length, 0, "detail objects at start");
 		master.valueForKey("selection", master.valueForKey("contents")[0]);
-		detail.retrieve();
 	});
 	master = $.controller.array("master");
 	ok(master, "list controller instantiated");

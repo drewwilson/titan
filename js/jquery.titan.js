@@ -157,6 +157,11 @@
 				this.root = root;
 				this.master = master;
 				this.attr = attr;
+				if (master) {
+					master.observe("selection", function(){
+						that.retrieve();
+					});
+				}
 				this.retrieve();
 			} else {
 				return $.kvo.encode(new $.controller.array(root, master, attr));
@@ -214,7 +219,6 @@
 			var data = {};
 			data = that.root;
 			if (that.master) {
-				console.log("asdf");
 				var selection = that.master.valueForKey("selection");
 				data = {};
 				data[that.root] = {};
@@ -222,7 +226,6 @@
 				if (selection) {
 					data[that.root][that.attr] = selection.valueForKey("id");
 				} else {
-					console.log(that);
 					$.kvo.encode(that).valueForKey("contents", []);
 					return;
 				}
