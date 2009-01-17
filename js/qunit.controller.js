@@ -1,7 +1,7 @@
 module("controller", {
 	setup: function() {
 		$.controller.defaults.url = "server/";
-		$.ajaxSetup({timeout: 1000});
+		$.ajaxSetup({timeout: 0});
 	},
 	teardown: function() {
 		$.ajax({
@@ -12,7 +12,7 @@ module("controller", {
 	}
 });
 
-test("Test ArrayController retrieve", function(){
+test("Test controller.array.retrieve", function(){
 	expect(2);
 	stop();
 	var list;
@@ -79,26 +79,27 @@ test("Test controller.array.update", function(){
 	ok(list, "list controller instantiated");
 });
 
-test("Test controller.array.conditions", function(){
+test("Test master-detail controllers", function(){
 	stop(1000);
-	var master, detail;
+	var master = 0, detail;
 	$("#test-list").ajaxStop(function(){
 		$(this).unbind("ajaxStop");
 		$(this).ajaxStop(function(){
 			$(this).unbind("ajaxStop");
 			$(this).ajaxStop(function(){
 				$(this).unbind("ajaxStop");
-				equals(detail.valueForKey("contents").length, 1, "master with one details");
+				equals(detail.valueForKey("contents").length, 1, "selected master with one details");
 				start();
 			});
-			equals(detail.valueForKey("contents").length, 0, "master with no details");
+			equals(detail.valueForKey("contents").length, 0, "selected master with no details");
 			master.valueForKey("selection", master.valueForKey("contents")[1]);
 		});
 		equals(master.valueForKey("contents").length, 4, "count master objects");
-		detail = $.controller.array("detail", master, "parent_id");
 		equals(detail.valueForKey("contents").length, 0, "detail objects at start");
 		master.valueForKey("selection", master.valueForKey("contents")[0]);
 	});
 	master = $.controller.array("master");
-	ok(master, "list controller instantiated");
+	detail = $.controller.array("detail", master, "parent_id");
+	ok(master, "master controller instantiated");
+	ok(detail, "detail controller instantiated");
 });
