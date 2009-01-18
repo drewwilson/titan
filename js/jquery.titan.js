@@ -245,3 +245,75 @@
 	});
 })(jQuery);
 
+// Template Support
+(function($){
+	$.fn.template = function(controller){
+		return this.each(function() {
+			var that = this;
+			var tpl = $(that).data("template");
+			if ( ! tpl) {
+				tpl = that.cloneNode(true);
+				$(that).data("template", tpl);
+			}
+			function fn(){
+				var data = controller.valueForKey("contents");
+				if (data && data.length > 0) {
+					$(that).empty();
+					$(data).each(function(){
+						$(that).append($.visitElements(tpl, $.fn.template.defaultRenderer, this).contents());
+					});
+				}
+			}
+			controller.observe("contents", function(){
+				fn();
+			});
+			fn();
+		});
+	};
+	$.fn.template.defaultRenderer = function(elem, data) {
+		var classes = elem.className.split(/\s+/);
+		for (var i = 0; i < classes.length; i++) {
+			if (/^ti_/.test(classes[i])) {
+				var curData = data[classes[i].replace(/^ti_/, "")];
+				if (curData != undefined) {
+					if (curData.constructor == Array) {
+						var newElems = $.fn.render.parse(elem, curData);
+						$(elem).empty().append(newElems);
+						return false;
+					} else {
+						$(elem).text(curData);
+						return true;
+					}
+				}
+			}
+		}
+		return true;
+	}
+	$.visitElements = function(root, visitor, context){
+		var start, current, next = null;
+		current = start = root.cloneNode(true);
+		do {
+			if (current.nodeType == 1) {
+				if (visitor(current, context)) {
+					next = current.firstChild || current.nextSibling;
+				} else {
+					next = current.nextSibling;
+				}
+			} else {
+				next = current.firstChild || current.nextSibling;
+			}
+			var tmp = current;
+			if ( ! next) {
+				var tmp = current;
+				do {
+					next = tmp.parentNode || start;
+					if (next == start) break;
+					tmp = next;
+					next = next.nextSibling;
+				} while ( ! next);
+			}
+			current = next;
+		} while (current != start);
+		return $(start);
+	}
+})(jQuery);
