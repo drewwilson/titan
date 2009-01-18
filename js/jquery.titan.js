@@ -257,8 +257,8 @@
 			}
 			function fn(){
 				var data = controller.valueForKey("contents");
+				$(that).empty();
 				if (data && data.length > 0) {
-					$(that).empty();
 					$(data).each(function(){
 						$(that).append($.visitElements(tpl, $.fn.template.defaultRenderer, this));
 					});

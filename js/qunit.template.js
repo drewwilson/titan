@@ -33,3 +33,22 @@ test("Test connecting a controller to a template", function(){
 	list = $.controller.array("list");
 	$("#test-list").template(list);
 });
+
+test("Test template connected to a detail controller", function(){
+	var master, detail;
+	stop();
+	$("#main").ajaxStop(function(){
+		$(this).unbind("ajaxStop");
+		$(this).ajaxStop(function(){
+			$(this).unbind("ajaxStop");
+			equals($("#test-list span").length, 1, "master with 0 details");
+			equals($("#test-list span").text(), "blah", "details name is 'blah'");
+			start();
+		});
+		equals($("#test-list span").length, 0, "master with 0 details");
+		master.valueForKey("selection", master.valueForKey("contents")[1]);
+	});
+	master = $.controller.array("master");
+	detail = $.controller.array("detail", master, "parent_id");
+	$("#test-list").template(detail);
+});
