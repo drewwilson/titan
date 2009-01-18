@@ -52,3 +52,31 @@ test("Test template connected to a detail controller", function(){
 	detail = $.controller.array("detail", master, "parent_id");
 	$("#test-list").template(detail);
 });
+
+test("Test template formatter", function(){
+	var master, detail;
+	stop();
+	$("#main").ajaxStop(function(){
+		$(this).unbind("ajaxStop");
+		$(this).ajaxStop(function(){
+			$(this).unbind("ajaxStop");
+			$("#test-list span").each(function(){
+				equals($(this).text(), "blahcustom", "check custom formatter");
+			});
+			start();
+		});
+		equals($("#test-list span").length, 0, "master with 0 details");
+		master.valueForKey("selection", master.valueForKey("contents")[1]);
+	});
+	master = $.controller.array("master");
+	detail = $.controller.array("detail", master, "parent_id");
+	$("#test-list").template(detail, {
+		"span" : function(elem, data){
+			data.observe("name", function(){
+				$(elem).text(data.valueForKey("name") + "custom");
+			});
+			$(elem).text(data.valueForKey("name") + "custom");
+			return true;
+		}
+	});
+});

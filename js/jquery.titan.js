@@ -247,13 +247,14 @@
 
 // Template Support
 (function($){
-	$.fn.template = function(controller){
+	$.fn.template = function(controller, formatters){
 		return this.each(function() {
 			var that = this;
 			var tpl = $(that).data("template");
 			if ( ! tpl) {
 				tpl = that.cloneNode(true);
 				$(that).data("template", tpl);
+				$(tpl).data("formatters", formatters || []);
 			}
 			function fn(){
 				var data = controller.valueForKey("contents");
@@ -295,11 +296,22 @@
 	$.visitElements = function(root, visitor, context){
 		var func, start, current, next = null;
 		current = start = root.cloneNode(true);
+		formatters = $(root).data("formatters");
+		if (formatters) {
+			$(formatters).each(function(){
+				var format = this;
+				for (var sel in format) {
+					$(start).find(sel).each(function(){
+						$(this).data("format", format[sel]);
+					});
+				}
+			});
+		}
 		do {
 			if (current.nodeType == 1) {
 				$(current).data("context", context);
 				func = $(current).data("format") || visitor;
-				if (func(current, context)) {
+				if (func(current, $.kvo.encode(context))) {
 					next = current.firstChild || current.nextSibling;
 				} else {
 					next = current.nextSibling;
