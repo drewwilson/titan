@@ -260,7 +260,7 @@
 				if (data && data.length > 0) {
 					$(that).empty();
 					$(data).each(function(){
-						$(that).append($.visitElements(tpl, $.fn.template.defaultRenderer, this).contents());
+						$(that).append($.visitElements(tpl, $.fn.template.defaultRenderer, this));
 					});
 				}
 			}
@@ -277,7 +277,10 @@
 				var curData = data[classes[i].replace(/^ti_/, "")];
 				if (curData != undefined) {
 					if (curData.constructor == Array) {
-						var newElems = $.fn.render.parse(elem, curData);
+						var newElems = $.visitElements(
+							elem,
+							$.fn.template.defaultRenderer,
+							this);
 						$(elem).empty().append(newElems);
 						return false;
 					} else {
@@ -314,6 +317,6 @@
 			}
 			current = next;
 		} while (current != start);
-		return $(start);
+		return $(start).contents();
 	}
 })(jQuery);
