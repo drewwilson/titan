@@ -293,11 +293,13 @@
 		return true;
 	}
 	$.visitElements = function(root, visitor, context){
-		var start, current, next = null;
+		var func, start, current, next = null;
 		current = start = root.cloneNode(true);
 		do {
 			if (current.nodeType == 1) {
-				if (visitor(current, context)) {
+				$(current).data("context", context);
+				func = $(current).data("format") || visitor;
+				if (func(current, context)) {
 					next = current.firstChild || current.nextSibling;
 				} else {
 					next = current.nextSibling;
