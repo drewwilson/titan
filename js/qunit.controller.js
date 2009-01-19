@@ -80,7 +80,7 @@ test("Test controller.array.update", function(){
 });
 
 test("Test master-detail controllers", function(){
-	stop(1000);
+	stop();
 	var master = 0, detail;
 	$("#test-list").ajaxStop(function(){
 		$(this).unbind("ajaxStop");
@@ -91,15 +91,14 @@ test("Test master-detail controllers", function(){
 				equals(detail.valueForKey("contents").length, 1, "selected master with one details");
 				start();
 			});
-			equals(detail.valueForKey("contents").length, 0, "selected master with no details");
+			equals(detail.valueForKey("contents").length, 0, "detail objects at start");
 			master.valueForKey("selection", master.valueForKey("contents")[1]);
 		});
 		equals(master.valueForKey("contents").length, 4, "count master objects");
-		equals(detail.valueForKey("contents").length, 0, "detail objects at start");
-		master.valueForKey("selection", master.valueForKey("contents")[0]);
+		detail = $.controller.array("detail", {master: [master, "parent_id"]});
+		ok(detail, "detail controller instantiated");
 	});
 	master = $.controller.array("master");
-	detail = $.controller.array("detail", {master: [master, "parent_id"]});
 	ok(master, "master controller instantiated");
-	ok(detail, "detail controller instantiated");
 });
+

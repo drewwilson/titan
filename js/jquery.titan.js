@@ -233,6 +233,9 @@
 				}
 				data = $.serialize(data);
 			}
+			if ($.kvo.encode(that).valueForKey("selection")) {
+				that._last_id = that.valueForKeyPath("selection.id");
+			}
 			$.ajax({
 				url : $.controller.defaults.url,
 				contentType : "application/json",
@@ -240,6 +243,19 @@
 				type : "GET",
 				data: data,
 				success : function(data) {
+					var found = false;
+					if (that._last_id) {
+						$(data).each(function(){
+							if (that._last_id  == this.id) {
+								found = true;
+								that.valueForKey("selection", this);
+								return false;
+							}
+						});
+					}
+					if ( ! found && data.length > 0) {
+						that.valueForKey("selection", data[0]);
+					}
 					that.valueForKey("contents", data);
 				}
 			});
