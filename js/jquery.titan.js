@@ -155,13 +155,18 @@
 			if (this.constructor == $.controller.array) {
 				var that = this;
 				this.root = root;
-				if (options && options.master) {
-					this.master = options.master[0];
-					this.attr = options.master[1];
-					if (this.master) {
-						this.master.observe("selection", function(){
-							that.retrieve();
-						});
+
+				if (options) {
+					this.options = options;
+					if (options.master) {
+						this.master = options.master[0];
+						this.attr = options.master[1];
+						if (this.master) {
+							delete this.options.master;
+							this.master.observe("selection", function(){
+								that.retrieve();
+							});
+						}
 					}
 				}
 				this.retrieve();
@@ -219,19 +224,22 @@
 		retrieve: function() {
 			var that = this;
 			var data = {};
-			data = that.root;
+			data[that.root] = that.options ? that.options : that.master ? {} : false;
+
 			if (that.master) {
 				var selection = that.master.valueForKey("selection");
-				data = {};
-				data[that.root] = {};
-				
 				if (selection) {
 					data[that.root][that.attr] = selection.valueForKey("id");
 				} else {
 					$.kvo.encode(that).valueForKey("contents", []);
 					return;
 				}
+			}
+
+			if (data[that.root]) {
 				data = $.serialize(data);
+			} else {
+				data = that.root;
 			}
 			if ($.kvo.encode(that).valueForKey("selection")) {
 				that._last_id = that.valueForKeyPath("selection.id");
