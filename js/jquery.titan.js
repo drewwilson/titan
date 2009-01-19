@@ -151,20 +151,22 @@
 (function($){
 	$.controller = {
 		defaults: {},
-		array: function(root, master, attr){
+		array: function(root, options){
 			if (this.constructor == $.controller.array) {
 				var that = this;
 				this.root = root;
-				this.master = master;
-				this.attr = attr;
-				if (master) {
-					master.observe("selection", function(){
-						that.retrieve();
-					});
+				if (options && options.master) {
+					this.master = options.master[0];
+					this.attr = options.master[1];
+					if (this.master) {
+						this.master.observe("selection", function(){
+							that.retrieve();
+						});
+					}
 				}
 				this.retrieve();
 			} else {
-				return $.kvo.encode(new $.controller.array(root, master, attr));
+				return $.kvo.encode(new $.controller.array(root, options));
 			}
 		},
 		object:  function(){

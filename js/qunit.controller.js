@@ -99,7 +99,7 @@ test("Test master-detail controllers", function(){
 		master.valueForKey("selection", master.valueForKey("contents")[0]);
 	});
 	master = $.controller.array("master");
-	detail = $.controller.array("detail", master, "parent_id");
+	detail = $.controller.array("detail", {master: [master, "parent_id"]});
 	ok(master, "master controller instantiated");
 	ok(detail, "detail controller instantiated");
 });

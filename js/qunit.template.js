@@ -49,7 +49,7 @@ test("Test template connected to a detail controller", function(){
 		master.valueForKey("selection", master.valueForKey("contents")[1]);
 	});
 	master = $.controller.array("master");
-	detail = $.controller.array("detail", master, "parent_id");
+	detail = $.controller.array("detail", {master: [master, "parent_id"]});
 	$("#test-list").template(detail);
 });
 
@@ -69,7 +69,7 @@ test("Test template formatter", function(){
 		master.valueForKey("selection", master.valueForKey("contents")[1]);
 	});
 	master = $.controller.array("master");
-	detail = $.controller.array("detail", master, "parent_id");
+	detail = $.controller.array("detail", {master: [master, "parent_id"]});
 	$("#test-list").template(detail, {
 		"span" : function(elem, data){
 			data.observe("name", function(){
