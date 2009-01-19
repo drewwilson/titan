@@ -88,8 +88,13 @@ test("Test master-detail controllers", function(){
 			$(this).unbind("ajaxStop");
 			$(this).ajaxStop(function(){
 				$(this).unbind("ajaxStop");
+				$(this).ajaxStop(function(){
+					$(this).unbind("ajaxStop");
+					equals(detail.valueForKey("contents").length, 1, "still one detail on master reload");
+					start();
+				});
 				equals(detail.valueForKey("contents").length, 1, "selected master with one details");
-				start();
+				master.retrieve();
 			});
 			equals(detail.valueForKey("contents").length, 0, "detail objects at start");
 			master.valueForKey("selection", master.valueForKey("contents")[1]);
