@@ -280,7 +280,16 @@
 			if ( ! tpl) {
 				tpl = that.cloneNode(true);
 				$(that).data("template", tpl);
-				$(tpl).data("formatters", formatters || []);
+				if (formatters) {
+					$(formatters).each(function(){
+						var format = this;
+						for (var sel in format) {
+							$(tpl).find(sel).each(function(){
+								$(this).data("format", format[sel]);
+							});
+						}
+					});
+				}
 			}
 			function fn(){
 				var data = controller.valueForKey("contents");
@@ -297,6 +306,45 @@
 			fn();
 		});
 	};
+	$.fn.template.clone = function(elem) {
+		// Do the clone
+		var ret;
+		if ( !jQuery.support.noCloneEvent && !jQuery.isXMLDoc(this) ) {
+			// IE copies events bound via attachEvent when
+			// using cloneNode. Calling detachEvent on the
+			// clone will also remove the events from the orignal
+			// In order to get around this, we use innerHTML.
+			// Unfortunately, this means some modifications to
+			// attributes in IE that are actually only stored
+			// as properties will not be copied (such as the
+			// the name attribute on an input).
+			var clone = elem.cloneNode(true),
+				container = document.createElement("div");
+			container.appendChild(clone);
+			ret = jQuery.clean([container.innerHTML])[0];
+		} else
+			ret = elem.cloneNode(true);
+
+		// Need to set the expando to null on the cloned set if it exists
+		// removeData doesn't work here, IE removes it from the original as well
+		// this is primarily for IE but the data expando shouldn't be copied over in any browser
+		var clone = $(ret).find("*").andSelf().each(function(){
+			if ( this[ window.expando ] !== undefined )
+				this[ window.expando ] = null;
+		});
+
+		// Copy the events from the original to the clone
+
+		$(elem).find("*").andSelf().each(function(i){
+			if (this.nodeType == 3)
+				return;
+			var format = $.data(this, "format");
+			$.data(clone[i], "format", format);
+		});
+
+		// Return the cloned set
+		return ret;
+	},
 	$.fn.template.defaultRenderer = function(elem, data) {
 		var classes = elem.className.split(/\s+/);
 		for (var i = 0; i < classes.length; i++) {
@@ -321,21 +369,9 @@
 	}
 	$.visitElements = function(root, visitor, context){
 		var func, start, current, next = null;
-		current = start = root.cloneNode(true);
-		formatters = $(root).data("formatters");
-		if (formatters) {
-			$(formatters).each(function(){
-				var format = this;
-				for (var sel in format) {
-					$(start).find(sel).each(function(){
-						$(this).data("format", format[sel]);
-					});
-				}
-			});
-		}
+		current = start = $.fn.template.clone(root);
 		do {
 			if (current.nodeType == 1) {
-				$(current).data("context", context);
 				func = $(current).data("format") || visitor;
 				if (func(current, $.kvo.encode(context))) {
 					next = current.firstChild || current.nextSibling;
