@@ -273,6 +273,72 @@
 
 // Template Support
 (function($){
+	$.template = {
+		defaultRenderer: function(elem, data) {
+			var classes = elem.className.split(/\s+/);
+			for (var i = 0; i < classes.length; i++) {
+				if (/^ti_/.test(classes[i])) {
+					var curData = data[classes[i].replace(/^ti_/, "")];
+					if (curData != undefined) {
+						if (curData.constructor == Array) {
+							var newElems = $.template.visitElements(
+								elem,
+								$.template.defaultRenderer,
+								this);
+							$(elem).empty().append(newElems);
+							return false;
+						} else {
+							$(elem).text(curData);
+							return true;
+						}
+					}
+				}
+			}
+			return true;
+		},
+		visitElements: function(root, visitor, context){
+			var func, start, current, next = null;
+			current = start = $(root).cloneTemplate()[0];
+			do {
+				if (current.nodeType == 1) {
+					func = $(current).data("format") || visitor;
+					if (func(current, $.kvo.encode(context))) {
+						next = current.firstChild || current.nextSibling;
+					} else {
+						next = current.nextSibling;
+					}
+				} else {
+					next = current.firstChild || current.nextSibling;
+				}
+				var tmp = current;
+				if ( ! next) {
+					var tmp = current;
+					do {
+						next = tmp.parentNode || start;
+						if (next == start) break;
+						tmp = next;
+						next = next.nextSibling;
+					} while ( ! next);
+				}
+				current = next;
+			} while (current != start);
+			return $(start).contents();
+		}
+	}
+	$.fn.cloneTemplate = function() {
+		var ret = this.clone(false);
+		var clone = ret.find("*").andSelf();
+		this.find("*").andSelf().each(function(i){
+			if (this.nodeType == 3)
+				return;
+			var format = $.data(this, "format");
+			if (format) {
+				$.data(clone[i], "format", format);
+			}
+
+		});
+		return ret;
+	}
 	$.fn.template = function(controller, formatters){
 		return this.each(function() {
 			var that = this;
@@ -296,7 +362,7 @@
 				$(that).empty();
 				if (data && data.length > 0) {
 					$(data).each(function(){
-						$(that).append($.visitElements(tpl, $.fn.template.defaultRenderer, this));
+						$(that).append($.template.visitElements(tpl, $.template.defaultRenderer, this));
 					});
 				}
 			}
@@ -306,93 +372,4 @@
 			fn();
 		});
 	};
-	$.fn.template.clone = function(elem) {
-		// Do the clone
-		var ret;
-		if ( !jQuery.support.noCloneEvent && !jQuery.isXMLDoc(this) ) {
-			// IE copies events bound via attachEvent when
-			// using cloneNode. Calling detachEvent on the
-			// clone will also remove the events from the orignal
-			// In order to get around this, we use innerHTML.
-			// Unfortunately, this means some modifications to
-			// attributes in IE that are actually only stored
-			// as properties will not be copied (such as the
-			// the name attribute on an input).
-			var clone = elem.cloneNode(true),
-				container = document.createElement("div");
-			container.appendChild(clone);
-			ret = jQuery.clean([container.innerHTML])[0];
-		} else
-			ret = elem.cloneNode(true);
-
-		// Need to set the expando to null on the cloned set if it exists
-		// removeData doesn't work here, IE removes it from the original as well
-		// this is primarily for IE but the data expando shouldn't be copied over in any browser
-		var clone = $(ret).find("*").andSelf().each(function(){
-			if ( this[ window.expando ] !== undefined )
-				this[ window.expando ] = null;
-		});
-
-		// Copy the events from the original to the clone
-
-		$(elem).find("*").andSelf().each(function(i){
-			if (this.nodeType == 3)
-				return;
-			var format = $.data(this, "format");
-			$.data(clone[i], "format", format);
-		});
-
-		// Return the cloned set
-		return ret;
-	},
-	$.fn.template.defaultRenderer = function(elem, data) {
-		var classes = elem.className.split(/\s+/);
-		for (var i = 0; i < classes.length; i++) {
-			if (/^ti_/.test(classes[i])) {
-				var curData = data[classes[i].replace(/^ti_/, "")];
-				if (curData != undefined) {
-					if (curData.constructor == Array) {
-						var newElems = $.visitElements(
-							elem,
-							$.fn.template.defaultRenderer,
-							this);
-						$(elem).empty().append(newElems);
-						return false;
-					} else {
-						$(elem).text(curData);
-						return true;
-					}
-				}
-			}
-		}
-		return true;
-	}
-	$.visitElements = function(root, visitor, context){
-		var func, start, current, next = null;
-		current = start = $.fn.template.clone(root);
-		do {
-			if (current.nodeType == 1) {
-				func = $(current).data("format") || visitor;
-				if (func(current, $.kvo.encode(context))) {
-					next = current.firstChild || current.nextSibling;
-				} else {
-					next = current.nextSibling;
-				}
-			} else {
-				next = current.firstChild || current.nextSibling;
-			}
-			var tmp = current;
-			if ( ! next) {
-				var tmp = current;
-				do {
-					next = tmp.parentNode || start;
-					if (next == start) break;
-					tmp = next;
-					next = next.nextSibling;
-				} while ( ! next);
-			}
-			current = next;
-		} while (current != start);
-		return $(start).contents();
-	}
 })(jQuery);

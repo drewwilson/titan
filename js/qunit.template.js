@@ -36,6 +36,7 @@ test("Test connecting a controller to a template", function(){
 
 test("Test template connected to a detail controller", function(){
 	var master, detail;
+	expect(3);
 	stop();
 	$("#main").ajaxStop(function(){
 		$(this).unbind("ajaxStop");
@@ -54,6 +55,7 @@ test("Test template connected to a detail controller", function(){
 });
 
 test("Test template formatter", function(){
+	expect(2);
 	var master, detail;
 	stop();
 	$("#main").ajaxStop(function(){
