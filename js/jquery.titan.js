@@ -281,11 +281,16 @@
 					var curData = data[classes[i].replace(/^ti_/, "")];
 					if (curData != undefined) {
 						if (curData.constructor == Array) {
-							var newElems = $.template.visitElements(
-								elem,
-								$.template.defaultRenderer,
-								this);
-							$(elem).empty().append(newElems);
+							var tmp = $("<div></div>");
+							$(curData).each(function(){
+								$(tmp).append(
+									$.template.visitElements(
+										elem,
+										$.template.defaultRenderer,
+										this));
+							});
+							$(elem).empty();
+							$(elem).append($(tmp).contents());
 							return false;
 						} else {
 							$(elem).text(curData);
