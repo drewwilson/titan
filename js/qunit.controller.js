@@ -80,6 +80,7 @@ test("Test controller.array.update", function(){
 });
 
 test("Test master-detail controllers", function(){
+	expect(6);
 	stop();
 	var master = 0, detail;
 	$("#test-list").ajaxStop(function(){
