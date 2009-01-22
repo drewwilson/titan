@@ -179,30 +179,67 @@
 			} else {
 				return new $.controller.object();
 			}
+		},
+		create: function(model, obj, options){
+			var that = this;
+			var data = {};
+			data[model] = obj;
+			$.ajax($.extend({
+				url : $.controller.defaults.url,
+				data : $.serialize(data),
+				type : "POST"
+			}, options));
+		},
+		destroy: function(model, id, options){
+			var data = {};
+			data[model] = {id: id};
+			$.ajax($.extend({
+				url : $.controller.defaults.url + "?" + $.serialize(data),
+				type : "DELETE"
+			}, options));
+		},
+		update: function(model, obj, options){
+			var data = {};
+			data[model] = obj;
+			$.ajax($.extend({
+				url : $.controller.defaults.url + "?" + $.serialize(data),
+				contentType : "application/json",
+				type : "PUT"
+			}, options));
+		},
+		retrieve: function(model, conditions, options){
+			var that = this;
+			var data = {};
+
+			if (conditions && conditions != {}) {
+				data[model] = conditions;
+				data = $.serialize(data);
+				if (data == "") {
+					data = model;
+				}
+			}
+			$.ajax($.extend({
+				url : $.controller.defaults.url,
+				contentType : "application/json",
+				dataType : "json",
+				type : "GET",
+				data: data
+			}, options));
 		}
 	};
 	$.extend($.controller.array.prototype, {
 		root: "",
 		create: function(obj) {
 			var that = this;
-			var data = {};
-			data[that.root] = obj;
-			$.ajax({
-				url : $.controller.defaults.url,
-				data : $.serialize(data),
-				type : "POST",
-				success : function(data) {
+			$.controller.create(that.root, obj, {
+				success:function(data) {
 					that.retrieve();
 				}
 			});
 		},
 		destroy: function(id) {
 			var that = this;
-			var data = {};
-			data[that.root] = {id: id};
-			$.ajax({
-				url : $.controller.defaults.url + "?" + $.serialize(data),
-				type : "DELETE",
+			$.controller.destroy(that.root, id, {
 				success : function(data) {
 					that.retrieve();
 				}
@@ -210,12 +247,7 @@
 		},
 		update: function(obj) {
 			var that = this;
-			var data = {};
-			data[that.root] = obj;
-			$.ajax({
-				url : $.controller.defaults.url + "?" + $.serialize(data),
-				contentType : "application/json",
-				type : "PUT",
+			$.controller.update(that.root, obj, {
 				success : function(data) {
 					that.retrieve();
 				}
@@ -223,33 +255,21 @@
 		},
 		retrieve: function() {
 			var that = this;
-			var data = {};
-			data[that.root] = that.options ? that.options : that.master ? {} : false;
+			var conditions = {};
 
 			if (that.master) {
 				var selection = that.master.valueForKey("selection");
 				if (selection) {
-					data[that.root][that.attr] = selection.valueForKey("id");
+					conditions[that.attr] = selection.valueForKey("id");
 				} else {
 					$.kvo.encode(that).valueForKey("contents", []);
 					return;
 				}
 			}
-
-			if (data[that.root]) {
-				data = $.serialize(data);
-			} else {
-				data = that.root;
-			}
 			if ($.kvo.encode(that).valueForKey("selection")) {
 				that._last_id = that.valueForKeyPath("selection.id");
 			}
-			$.ajax({
-				url : $.controller.defaults.url,
-				contentType : "application/json",
-				dataType : "json",
-				type : "GET",
-				data: data,
+			$.controller.retrieve(that.root, conditions, {
 				success : function(data) {
 					var found = false;
 					if (that._last_id) {
