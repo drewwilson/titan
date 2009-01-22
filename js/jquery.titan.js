@@ -151,18 +151,18 @@
 (function($){
 	$.controller = {
 		defaults: {},
-		array: function(root, options){
+		array: function(model, conditions){
 			if (this.constructor == $.controller.array) {
 				var that = this;
-				this.root = root;
+				this.model = model;
 
-				if (options) {
-					this.options = options;
-					if (options.master) {
-						this.master = options.master[0];
-						this.attr = options.master[1];
+				if (conditions) {
+					this.conditions = conditions;
+					if (conditions.master) {
+						this.master = conditions.master[0];
+						this.attr = conditions.master[1];
 						if (this.master) {
-							delete this.options.master;
+							delete this.conditions.master;
 							this.master.observe("selection", function(){
 								that.retrieve();
 							});
@@ -171,7 +171,7 @@
 				}
 				this.retrieve();
 			} else {
-				return $.kvo.encode(new $.controller.array(root, options));
+				return $.kvo.encode(new $.controller.array(model, conditions));
 			}
 		},
 		object:  function(){
@@ -210,7 +210,6 @@
 		retrieve: function(model, conditions, options){
 			var that = this;
 			var data = {};
-
 			if (conditions && conditions != {}) {
 				data[model] = conditions;
 				data = $.serialize(data);
@@ -231,7 +230,7 @@
 		root: "",
 		create: function(obj) {
 			var that = this;
-			$.controller.create(that.root, obj, {
+			$.controller.create(that.model, obj, {
 				success:function(data) {
 					that.retrieve();
 				}
@@ -239,7 +238,7 @@
 		},
 		destroy: function(id) {
 			var that = this;
-			$.controller.destroy(that.root, id, {
+			$.controller.destroy(that.model, id, {
 				success : function(data) {
 					that.retrieve();
 				}
@@ -247,7 +246,7 @@
 		},
 		update: function(obj) {
 			var that = this;
-			$.controller.update(that.root, obj, {
+			$.controller.update(that.model, obj, {
 				success : function(data) {
 					that.retrieve();
 				}
@@ -269,7 +268,7 @@
 			if ($.kvo.encode(that).valueForKey("selection")) {
 				that._last_id = that.valueForKeyPath("selection.id");
 			}
-			$.controller.retrieve(that.root, conditions, {
+			$.controller.retrieve(that.model, conditions, {
 				success : function(data) {
 					var found = false;
 					if (that._last_id) {

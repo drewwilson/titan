@@ -4,7 +4,6 @@ test("Test observe(key)", function(){
 	expect(2);
 	var object = {prop:"old"};
 	$.kvo.encode(object);
-	
 	object.observe("prop", function(){
 		ok(true, "got a change notification");
 		equals(object.valueForKey("prop"), "new", "prop set to 'new'");
