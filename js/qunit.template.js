@@ -72,13 +72,31 @@ test("Test template formatter", function(){
 	});
 	master = $.controller.array("master");
 	detail = $.controller.array("detail", {master: [master, "parent_id"]});
-	$("#test-list").template(detail, {
-		"span" : function(elem, data){
-			$(data).observe("name", function(){
-				$(elem).text(data.valueForKey("name") + "custom");
-			});
-			$(elem).text($(data).valueForKey("name") + "custom");
-			return true;
-		}
+	$("#test-list span").format(function(elem, data){
+		$(data).observe("name", function(){
+			$(elem).text(data.valueForKey("name") + "custom");
+		});
+		$(elem).text($(data).valueForKey("name") + "custom");
+		return true;
 	});
+	$("#test-list").template(detail);
+});
+
+test("Test complex template", function(){
+	expect(7);
+	stop();
+	var complex;
+	$("#main").ajaxStop(function(){
+		$(this).unbind("ajaxStop");
+		equals($("#test-complex div span").length, 6, "6 entries");
+		$("#test-complex div span").each(function(){
+			equals($(this).text(), "custom", "test complex custom formatter");
+		})
+		start();
+	});
+	$("#test-complex div span").format(function(elem,data){
+		$(elem).text("custom");
+	});
+	complex = $.controller.array("complex");
+	$("#test-complex").template(complex);
 });

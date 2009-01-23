@@ -71,7 +71,6 @@
 			if (keys.length > 1) {
 				var chainKey = path.replace(/\./g, "_");
 				var chain = $(obj).data(chainKey);
-				console.log(chain);
 				$(chain[$.data(fn)]).each(function(){
 					this();
 				});
@@ -339,53 +338,47 @@
 
 // Template Support
 (function($){
-	$.template = function(root, controller, formatters) {
+	$.template = function(root, controller) {
 		var tpl = this;
 		tpl.root = root;
-		tpl.pristine = $(root).clone(false);
+		tpl.pristine = $(root).cloneTemplate(false)[0];
 		tpl.contents = [];
 		tpl.controller = controller;
-		if (formatters) {
-			$(formatters).each(function(){
-				var format = this;
-				for (var sel in format) {
-					$(tpl.pristine).find(sel).each(function(){
-						$(this).data("format", format[sel]);
-					});
-				}
-			});
-		}
 		$(tpl).observe("contents", function(){
 			tpl.render();
 		});
 		$(this).connect("contents", controller, "contents");
 	}
 	$.template.defaultRender = function(elem, data) {
-		var classes = elem.className.split(/\s+/);
-		for (var i = 0; i < classes.length; i++) {
-			if (/^ti_/.test(classes[i])) {
-				var curData = data[classes[i].replace(/^ti_/, "")];
-				if (curData != undefined) {
-					if (curData.constructor == Array) {
-						var tmp = $("<div></div>");
-						$(curData).each(function(){
-							$(tmp).append(
-								$.template.visitElements(
-									elem,
-									$.template.defaultRenderer,
-									this));
-						});
-						$(elem).empty();
-						$(elem).append($(tmp).contents());
-						return false;
-					} else {
-						$(elem).text(curData);
-						return true;
+		if ($(elem).data("format")) {
+			return $(elem).data("format").call(this, elem, data);
+		} else {
+			var classes = elem.className.split(/\s+/);
+			for (var i = 0; i < classes.length; i++) {
+				if (/^ti_/.test(classes[i])) {
+					var curData = data[classes[i].replace(/^ti_/, "")];
+					if (curData != undefined) {
+						if (curData.constructor == Array) {
+							var tmp = $("<div></div>");
+							$(curData).each(function(){
+								$(tmp).append(
+									$.visit(
+										$(elem).cloneTemplate(false)[0],
+										this,
+										$.template.defaultRender));
+							});
+							$(elem).empty();
+							$(elem).append($(tmp).contents());
+							return false;
+						} else {
+							$(elem).text(curData);
+							return true;
+						}
 					}
 				}
 			}
+			return true;
 		}
-		return true;
 	},
 	$.template.prototype = {
 		deactivate: function(root){
@@ -395,7 +388,7 @@
 				});
 			}
 			if ( ! root) {
-				this.disconnect("contents", this.controller, "contents");
+				$(this).disconnect("contents", this.controller, "contents");
 				delete this.controller;
 			}
 		},
@@ -403,58 +396,63 @@
 			var tpl = this;
 			var contents = $(tpl).valueForKey("contents");
 			if (contents) {
-				tpl.deactivate(true);
 				$(tpl.root).empty();
 				$(contents).each(function(i){
-					$(tpl.root).append(tpl.visit(this));
+					$(tpl.root).append($.visit(
+						$(tpl.pristine).cloneTemplate(false)[0],
+						this,
+						$.template.defaultRender));
 				});
 			}
-		},
-		cloneTemplate: function(){
-			var ret = $(this.pristine).clone(false);
-			var clone = ret.find("*").andSelf();
-			$(this.pristine).find("*").andSelf().each(function(i){
-				if (this.nodeType == 3)
-					return;
-				var format = $.data(this, "format");
-				if (format) {
-					$.data(clone[i], "format", format);
-				}
-			});
-			return ret;
-		},
-		visit: function(data){
-			var func, start, current, next = null;
-			current = start = this.cloneTemplate()[0];
-			do {
-				if (current.nodeType == 1) {
-					func = $(current).data("format") || $.template.defaultRender;
-					if (func(current, data)) {
-						next = current.firstChild || current.nextSibling;
-					} else {
-						next = current.nextSibling;
-					}
-				} else {
-					next = current.firstChild || current.nextSibling;
-				}
-				var tmp = current;
-				if ( ! next) {
-					var tmp = current;
-					do {
-						next = tmp.parentNode || start;
-						if (next == start) break;
-						tmp = next;
-						next = next.nextSibling;
-					} while ( ! next);
-				}
-				current = next;
-			} while (current != start);
-			return $(start).contents();
 		}
 	}
-	$.fn.template = function(controller, formatters){
+	$.visit = function(root, data, fn){
+		var func, start, current, next = null;
+		current = start = root;
+		do {
+			if (current.nodeType == 1) {
+				if (fn.call(this, current, data)) {
+					next = current.firstChild || current.nextSibling;
+				} else {
+					next = current.nextSibling;
+				}
+			} else {
+				next = current.firstChild || current.nextSibling;
+			}
+			var tmp = current;
+			if ( ! next) {
+				var tmp = current;
+				do {
+					next = tmp.parentNode || start;
+					if (next == start) break;
+					tmp = next;
+					next = next.nextSibling;
+				} while ( ! next);
+			}
+			current = next;
+		} while (current != start);
+		return $(start).contents();
+	}
+	
+	$.fn.cloneTemplate = function(events){
+		var ret = $(this).clone(events);
+		var clone = ret.find("*").andSelf();
+		$(this).find("*").andSelf().each(function(i){
+			if (this.nodeType == 3)
+				return;
+			var format = $.data(this, "format");
+			if (format) {
+				$.data(clone[i], "format", format);
+			}
+		});
+		return ret;
+	}
+	$.fn.format = function(fn) {
+		return $(this).data("format", fn);
+	}
+	$.fn.template = function(controller){
 		return this.each(function(){
-			$(this).data("template", new $.template(this, controller, formatters))
+			$(this).data("template", new $.template(this, controller))
 		});
 	}
 })(jQuery)

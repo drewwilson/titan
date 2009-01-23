@@ -46,7 +46,6 @@ switch($method) {
 			} else {
 				echo "[]";
 			}
-
 		}
 		break;
 	case "POST":
