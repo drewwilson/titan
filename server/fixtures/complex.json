@@ -1,0 +1,23 @@
+[
+	{
+		"name":"Personal",
+		"entries": [
+			{ "content":"Entry 1" },
+			{ "content":"Entry 2" }
+		]
+	},
+	{
+		"name":"Business",
+		"entries": [
+			{ "content":"Entry 1" },
+			{ "content":"Entry 2" }
+		]
+	},
+	{
+		"name":"Hobby",
+		"entries": [
+			{ "content":"Entry 1" },
+			{ "content":"Entry 2" }
+		]
+	}
+]
