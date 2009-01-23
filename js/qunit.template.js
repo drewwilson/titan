@@ -47,7 +47,7 @@ test("Test template connected to a detail controller", function(){
 			start();
 		});
 		equals($("#test-list span").length, 0, "master with 0 details");
-		master.valueForKey("selection", master.valueForKey("contents")[1]);
+		$(master).valueForKey("selection", $(master).valueForKey("contents")[1]);
 	});
 	master = $.controller.array("master");
 	detail = $.controller.array("detail", {master: [master, "parent_id"]});
@@ -68,16 +68,16 @@ test("Test template formatter", function(){
 			start();
 		});
 		equals($("#test-list span").length, 0, "master with 0 details");
-		master.valueForKey("selection", master.valueForKey("contents")[1]);
+		$(master).valueForKey("selection", $(master).valueForKey("contents")[1]);
 	});
 	master = $.controller.array("master");
 	detail = $.controller.array("detail", {master: [master, "parent_id"]});
 	$("#test-list").template(detail, {
 		"span" : function(elem, data){
-			data.observe("name", function(){
+			$(data).observe("name", function(){
 				$(elem).text(data.valueForKey("name") + "custom");
 			});
-			$(elem).text(data.valueForKey("name") + "custom");
+			$(elem).text($(data).valueForKey("name") + "custom");
 			return true;
 		}
 	});

@@ -7,6 +7,7 @@
 			var reobserveOriginal = function(){
 				$(origTarget).unobserve(origPath, fn);
 				$(origTarget).observe(origPath, fn);
+				fn();
 			};
 			var undoChainLink = function(){
 				$(target).unbind(key+"-changed", reobserveOriginal);
@@ -17,95 +18,141 @@
 			}
 		} else {
 			$(target).bind(key+"-changed", fn);
-			return [];
 		}
+		return [];
 	}
 	
-	$.kvo = {
-		propertyRevision: 0,
-		bindings: {},
-		encode: function(obj){
-			if (typeof obj != "object" || obj.encode) {
-				return obj;
-			}
-			return $.extend(obj, $.kvo);
-		},
-		valueForKey: function(key, value){
-			if ($.isFunction(this[key])) {
-				return this[key].call(this, key, value);
+	$.extend({
+		valueForKey: function(obj, key, value){
+			if ($.isFunction(obj[key])) {
+				return obj[key].call(obj, key, value);
 			} else {
 				if (value !== undefined) {
-					if (this[key] !== value) {
-						var old = this[key];
-						this[key] = value;
-						this.propertyRevision++;
-						$(this).trigger(key + "-changed", {oldValue: old, newValue: this[key]});
+					if (obj[key] !== value) {
+						var old = obj[key];
+						obj[key] = value;
+						$(obj).data("propertyRevision", $(obj).data("propertyRevision")+1);
+						$(obj).trigger(key + "-changed", {
+							oldValue: old,
+							newValue: obj[key]});
 					}
 				}
-				
-				return $.kvo.encode(this[key]);
+				return obj[key];
 			}
 		},
-		valueForKeyPath: function(path, value){
-			var obj = this;
+		valueForKeyPath: function(obj, path, value){
 			var keys = path.split(".");
 			var key;
 			while(keys.length > 1) {
 				key = keys.shift();
-				obj = obj.valueForKey(key);
+				obj = $(obj).valueForKey(key);
 				if (obj === undefined) {
 					return undefined;
 				}
 			}
 			key = keys.shift();
-			return obj.valueForKey(key, value);
+			return $(obj).valueForKey(key, value);
 		},
-		observe: function(path, fn) {
+		observe: function(obj, path, fn) {
+			var keys = path.split(".");
+			var chainKey = path.replace(/\./g, "_");
+			chain = $(obj).data(chainKey, {});
+			if (keys.length > 1) {
+				var chain = $(obj).data(chainKey);
+				var tmp = makeChain(obj, keys.slice(), fn, obj, path);
+				chain[$.data(fn)] = tmp;
+			} else {
+				$(obj).bind(path+"-changed", fn);
+			}
+			return fn;
+		},
+		unobserve: function(obj, path, fn) {
 			var keys = path.split(".");
 			if (keys.length > 1) {
 				var chainKey = path.replace(/\./g, "_");
-
-				var chain = $(this).data(chainKey);
-
-				if ( ! chain) {
-
-					chain = $(this).data(chainKey, []);
-				}
-				chain[$.data(fn)] = makeChain(this, keys.slice(), fn, this, path);
+				var chain = $(obj).data(chainKey);
+				console.log(chain);
+				$(chain[$.data(fn)]).each(function(){
+					this();
+				});
 			} else {
-				$(this).bind(path+"-changed", fn);
+				$(obj).unbind(path+"-changed", fn);
 			}
+			return fn;
 		},
-		connect: function(attr, to, toAttr) {
-			var from = this;
+		connect: function(from, fromAttr, to, toAttr) {
 			var binding = {
-				from: this,
+				from: from,
 				to: to,
-				fromAttr: attr,
+				fromAttr: fromAttr,
 				toAttr: toAttr,
 				lastToPropertyRevision: 0,
 				lastFromPropertyRevision: 0
 			};
-			from.bindings[$.data(to) + toAttr] = binding;
-			from.observe(attr, function(){
+			$(from).data(fromAttr + $.data(to) + toAttr, binding);
+			binding.fromFn = $(from).observe(fromAttr, function(){
 				if (from.propertyRevision <= binding.lastFromPropertyRevision) {
 					return;
 				}
-				binding.lastFromPropertyRevision = from.propertyRevision;
-				to.valueForKeyPath(toAttr, from.valueForKeyPath(attr));
+				binding.lastFromPropertyRevision = $(from).data("propertyRevision");
+				$(to).valueForKeyPath(toAttr, $(from).valueForKeyPath(fromAttr));
 			});
-			to.observe(toAttr, function(){
-				if (to.propertyRevision <= binding.lastToPropertyRevision) {
+			binding.toFn = $(to).observe(toAttr, function(){
+				if ($(to).propertyRevision <= binding.lastToPropertyRevision) {
 					return;
 				}
-				binding.lastToPropertyRevision = to.propertyRevision;
-				from.valueForKeyPath(attr, to.valueForKeyPath(toAttr));
+				binding.lastToPropertyRevision = $(to).data("propertyRevision");
+				$(from).valueForKeyPath(fromAttr, $(to).valueForKeyPath(toAttr));
 			});
-			binding.lastToPropertyRevision = to.propertyRevision;
-			binding.lastFromPropertyRevision = from.propertyRevision;
-			from.valueForKeyPath(attr, to.valueForKeyPath(toAttr));
+			binding.lastToPropertyRevision = $(to).data("propertyRevision");
+			binding.lastFromPropertyRevision = $(from).data("propertyRevision");
+			$(from).valueForKeyPath(fromAttr, $(to).valueForKeyPath(toAttr));
+		},
+		disconnect: function(obj, fromAttr, to, toAttr) {
+			var binding = $(obj).data(fromAttr + $.data(to) + toAttr);
+			binding.to.unobserve(toAttr, binding.toFn);
+			binding.from.unobserve(fromAttr, binding.fromFn);
 		}
-	}
+	});
+	$.fn.extend({
+		valueForKey: function(key, value){
+			if (value === undefined) {
+				return $.valueForKey(this[0], key);
+			}
+			return this.each(function(){
+				$.valueForKey(this, key, value);
+			});
+		},
+		valueForKeyPath: function(path, value){
+			if (value === undefined) {
+				return $.valueForKeyPath(this[0], path);
+			}
+			return this.each(function(){
+				$.valueForKeyPath(this, path, value);
+			});
+		},
+		observe: function(path, fn) {
+			return this.each(function(){
+				$.observe(this, path, fn);
+			});
+		},
+		unobserve: function(path, fn) {
+			return this.each(function(){
+				$.unobserve(this, path, fn);
+			});
+		},
+		connect: function(attr, to, toAttr) {
+			return this.each(function(){
+				$.connect(this, attr, to, toAttr);
+			});
+		},
+		disconnect: function(attr, to, toAttr) {
+			return this.each(function(){
+				$.disconnect(this, attr, to, toAttr);
+			});
+		}
+		
+	});
 })(jQuery);
 
 //Recursive encodeURIComponent
@@ -163,7 +210,7 @@
 						this.attr = conditions.master[1];
 						if (this.master) {
 							delete this.conditions.master;
-							this.master.observe("selection", function(){
+							$(this.master).observe("selection", function(){
 								that.retrieve();
 							});
 						}
@@ -171,7 +218,7 @@
 				}
 				this.retrieve();
 			} else {
-				return $.kvo.encode(new $.controller.array(model, conditions));
+				return new $.controller.array(model, conditions);
 			}
 		},
 		object:  function(){
@@ -257,16 +304,16 @@
 			var conditions = {};
 
 			if (that.master) {
-				var selection = that.master.valueForKey("selection");
+				var selection = $(that.master).valueForKey("selection");
 				if (selection) {
-					conditions[that.attr] = selection.valueForKey("id");
+					conditions[that.attr] = $(selection).valueForKey("id");
 				} else {
-					$.kvo.encode(that).valueForKey("contents", []);
+					$(that).valueForKey("contents", []);
 					return;
 				}
 			}
-			if ($.kvo.encode(that).valueForKey("selection")) {
-				that._last_id = that.valueForKeyPath("selection.id");
+			if ($(that).valueForKey("selection") !== undefined) {
+				that._last_id = $(that).valueForKeyPath("selection.id");
 			}
 			$.controller.retrieve(that.model, conditions, {
 				success : function(data) {
@@ -275,15 +322,15 @@
 						$(data).each(function(){
 							if (that._last_id  == this.id) {
 								found = true;
-								that.valueForKey("selection", this);
+								$(that).valueForKey("selection", this);
 								return false;
 							}
 						});
 					}
 					if ( ! found && data.length > 0) {
-						that.valueForKey("selection", data[0]);
+						$(that).valueForKey("selection", data[0]);
 					}
-					that.valueForKey("contents", data);
+					$(that).valueForKey("contents", data);
 				}
 			});
 		}
@@ -292,41 +339,97 @@
 
 // Template Support
 (function($){
-	$.template = {
-		defaultRenderer: function(elem, data) {
-			var classes = elem.className.split(/\s+/);
-			for (var i = 0; i < classes.length; i++) {
-				if (/^ti_/.test(classes[i])) {
-					var curData = data[classes[i].replace(/^ti_/, "")];
-					if (curData != undefined) {
-						if (curData.constructor == Array) {
-							var tmp = $("<div></div>");
-							$(curData).each(function(){
-								$(tmp).append(
-									$.template.visitElements(
-										elem,
-										$.template.defaultRenderer,
-										this));
-							});
-							$(elem).empty();
-							$(elem).append($(tmp).contents());
-							return false;
-						} else {
-							$(elem).text(curData);
-							return true;
-						}
+	$.template = function(root, controller, formatters) {
+		var tpl = this;
+		tpl.root = root;
+		tpl.pristine = $(root).clone(false);
+		tpl.contents = [];
+		tpl.controller = controller;
+		if (formatters) {
+			$(formatters).each(function(){
+				var format = this;
+				for (var sel in format) {
+					$(tpl.pristine).find(sel).each(function(){
+						$(this).data("format", format[sel]);
+					});
+				}
+			});
+		}
+		$(tpl).observe("contents", function(){
+			tpl.render();
+		});
+		$(this).connect("contents", controller, "contents");
+	}
+	$.template.defaultRender = function(elem, data) {
+		var classes = elem.className.split(/\s+/);
+		for (var i = 0; i < classes.length; i++) {
+			if (/^ti_/.test(classes[i])) {
+				var curData = data[classes[i].replace(/^ti_/, "")];
+				if (curData != undefined) {
+					if (curData.constructor == Array) {
+						var tmp = $("<div></div>");
+						$(curData).each(function(){
+							$(tmp).append(
+								$.template.visitElements(
+									elem,
+									$.template.defaultRenderer,
+									this));
+						});
+						$(elem).empty();
+						$(elem).append($(tmp).contents());
+						return false;
+					} else {
+						$(elem).text(curData);
+						return true;
 					}
 				}
 			}
-			return true;
+		}
+		return true;
+	},
+	$.template.prototype = {
+		deactivate: function(root){
+			if (this.children) {
+				$(this.children).each(function(){
+					this.deactivate(false);
+				});
+			}
+			if ( ! root) {
+				this.disconnect("contents", this.controller, "contents");
+				delete this.controller;
+			}
 		},
-		visitElements: function(root, visitor, context){
+		render: function(){
+			var tpl = this;
+			var contents = $(tpl).valueForKey("contents");
+			if (contents) {
+				tpl.deactivate(true);
+				$(tpl.root).empty();
+				$(contents).each(function(i){
+					$(tpl.root).append(tpl.visit(this));
+				});
+			}
+		},
+		cloneTemplate: function(){
+			var ret = $(this.pristine).clone(false);
+			var clone = ret.find("*").andSelf();
+			$(this.pristine).find("*").andSelf().each(function(i){
+				if (this.nodeType == 3)
+					return;
+				var format = $.data(this, "format");
+				if (format) {
+					$.data(clone[i], "format", format);
+				}
+			});
+			return ret;
+		},
+		visit: function(data){
 			var func, start, current, next = null;
-			current = start = $(root).cloneTemplate()[0];
+			current = start = this.cloneTemplate()[0];
 			do {
 				if (current.nodeType == 1) {
-					func = $(current).data("format") || visitor;
-					if (func(current, $.kvo.encode(context))) {
+					func = $(current).data("format") || $.template.defaultRender;
+					if (func(current, data)) {
 						next = current.firstChild || current.nextSibling;
 					} else {
 						next = current.nextSibling;
@@ -349,51 +452,9 @@
 			return $(start).contents();
 		}
 	}
-	$.fn.cloneTemplate = function() {
-		var ret = this.clone(false);
-		var clone = ret.find("*").andSelf();
-		this.find("*").andSelf().each(function(i){
-			if (this.nodeType == 3)
-				return;
-			var format = $.data(this, "format");
-			if (format) {
-				$.data(clone[i], "format", format);
-			}
-
-		});
-		return ret;
-	}
 	$.fn.template = function(controller, formatters){
-		return this.each(function() {
-			var that = this;
-			var tpl = $(that).data("template");
-			if ( ! tpl) {
-				tpl = that.cloneNode(true);
-				$(that).data("template", tpl);
-				if (formatters) {
-					$(formatters).each(function(){
-						var format = this;
-						for (var sel in format) {
-							$(tpl).find(sel).each(function(){
-								$(this).data("format", format[sel]);
-							});
-						}
-					});
-				}
-			}
-			function fn(){
-				var data = controller.valueForKey("contents");
-				$(that).empty();
-				if (data && data.length > 0) {
-					$(data).each(function(){
-						$(that).append($.template.visitElements(tpl, $.template.defaultRenderer, this));
-					});
-				}
-			}
-			controller.observe("contents", function(){
-				fn();
-			});
-			fn();
+		return this.each(function(){
+			$(this).data("template", new $.template(this, controller, formatters))
 		});
-	};
-})(jQuery);
+	}
+})(jQuery)

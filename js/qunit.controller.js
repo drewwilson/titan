@@ -17,7 +17,7 @@ test("Test controller.array.retrieve", function(){
 	stop();
 	var list;
 	$("#test-list").ajaxStop(function(){
-		equals(list.valueForKey("contents").length, 5, "count list objects");
+		equals($(list).valueForKey("contents").length, 5, "count list objects");
 		$(this).unbind("ajaxStop");
 		start();
 	});
@@ -32,11 +32,11 @@ test("Test controller.array.create", function(){
 	$("#test-list").ajaxStop(function(){
 		$(this).unbind("ajaxStop");
 		$(this).ajaxStop(function(){
-			equals(list.valueForKey("contents").length, 6, "count list objects");
+			equals($(list).valueForKey("contents").length, 6, "count list objects");
 			$(this).unbind("ajaxStop");
 			start();
 		});
-		equals(list.valueForKey("contents").length, 5, "count list objects");
+		equals($(list).valueForKey("contents").length, 5, "count list objects");
 		list.create({name: "asdf"});
 	});
 	list = $.controller.array("list");
@@ -48,10 +48,10 @@ test("Test controller.array.destroy", function(){
 	stop();
 	var list;
 	$("#test-list").ajaxStop(function(){
-		equals(list.valueForKey("contents").length, 5, "count list objects");
+		equals($(list).valueForKey("contents").length, 5, "count list objects");
 		$(this).unbind("ajaxStop");
 		$(this).ajaxStop(function(){
-			equals(list.valueForKey("contents").length, 4, "count list objects");
+			equals($(list).valueForKey("contents").length, 4, "count list objects");
 			$(this).unbind("ajaxStop");
 			start();
 		});
@@ -66,10 +66,10 @@ test("Test controller.array.update", function(){
 	stop();
 	var list;
 	$("#test-list").ajaxStop(function(){
-		equals(list.valueForKey("contents").length, 5, "count list objects");
+		equals($(list).valueForKey("contents").length, 5, "count list objects");
 		$(this).unbind("ajaxStop");
 		$(this).ajaxStop(function(){
-			equals(list.valueForKey("contents")[1].name, "updated", "updated list item");
+			equals($(list).valueForKey("contents")[1].name, "updated", "updated list item");
 			$(this).unbind("ajaxStop");
 			start();
 		});
@@ -91,16 +91,16 @@ test("Test master-detail controllers", function(){
 				$(this).unbind("ajaxStop");
 				$(this).ajaxStop(function(){
 					$(this).unbind("ajaxStop");
-					equals(detail.valueForKey("contents").length, 1, "still one detail on master reload");
+					equals($(detail).valueForKey("contents").length, 1, "still one detail on master reload");
 					start();
 				});
-				equals(detail.valueForKey("contents").length, 1, "selected master with one details");
+				equals($(detail).valueForKey("contents").length, 1, "selected master with one details");
 				master.retrieve();
 			});
-			equals(detail.valueForKey("contents").length, 0, "detail objects at start");
-			master.valueForKey("selection", master.valueForKey("contents")[1]);
+			equals($(detail).valueForKey("contents").length, 0, "detail objects at start");
+			$(master).valueForKey("selection", $(master).valueForKey("contents")[1]);
 		});
-		equals(master.valueForKey("contents").length, 4, "count master objects");
+		equals($(master).valueForKey("contents").length, 4, "count master objects");
 		detail = $.controller.array("detail", {master: [master, "parent_id"]});
 		ok(detail, "detail controller instantiated");
 	});
