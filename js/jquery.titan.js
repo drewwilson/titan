@@ -314,7 +314,7 @@
 			if ($(that).valueForKey("selection") !== undefined) {
 				that._last_id = $(that).valueForKeyPath("selection.id");
 			}
-			$.controller.retrieve(that.model, conditions, {
+			$.controller.retrieve(that.model, $.extend(conditions, this.conditions), {
 				success : function(data) {
 					var found = false;
 					if (that._last_id) {
