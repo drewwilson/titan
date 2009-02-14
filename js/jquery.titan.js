@@ -764,10 +764,18 @@
 		return s;
 	}
 
-	$.fn.formatNumber = function(number, decimals, dec_point, thousands_sep) {
+	$.fn.formatNumber = function(number, options) {
+		var defaults = {
+			decimals: 0,
+			dec_point: ".",
+			thousands_sep: ""
+		};
+		var opts = $.extend(defaults, options);
 		return $(this).format(function(elem, data){
 			var val = $(data).valueForKey(number);
-			dec_point = dec_point == undefined ? '.' : dec_point;
+			decimals = opts.decimals;
+			dec_point = opts.dec_point;
+			thousands_sep = opts.thousands_sep;
 			$(elem).text(number_format(val, decimals, dec_point, thousands_sep));
 		});
 	}
