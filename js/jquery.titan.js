@@ -460,14 +460,15 @@
 
 // Text template support
 (function($){
-	$.expand = function(obj, data) {
+	$.fillIn = function(obj, data) {
+		obj = $.extend({}, obj);
 		for(attr in obj) {
 			if (obj[attr].constructor == Array) {
 				$(obj[attr]).each(function(){
-					$.expand(obj[attr], data);
+					obj[attr] = $.fillIn(obj[attr], data);
 				});
 			} else if (typeof obj[attr] == "object") {
-				$.expand(obj[attr], data);
+				obj[attr] = $.fillIn(obj[attr], data);
 			} else if (typeof obj[attr] == "string") {
 				obj[attr] = obj[attr].replace(/{([^{}]*)}/g,
 					function (tag, name) {
@@ -477,6 +478,7 @@
 				);
 			}
 		}
+		return obj;
 	}
 })(jQuery);
 
@@ -786,18 +788,19 @@
 			class_name: "",
 			target: ""
 		};
-		var opts = $.extend(defaults, options);
 		return $(this).format(function(elem, data){
-			$(elem).text($(data).valueForKey(text));
-			$(elem).attr("href", $(data).valueForKey(href));
+			var opts = $.extend(defaults, {text: text, href: href}, options);
+			opts = $.fillIn(opts, data);
+			$(elem).text(opts.text);
+			$(elem).attr("href", opts.href);
 			if (opts.title != ""){
-				$(elem).attr("title", $(data).valueForKey(opts.title));
+				$(elem).attr("title", opts.title);
 			}
 			if (opts.class_name != ""){
-				$(elem).attr("class", $(data).valueForKey(opts.class_name));
+				$(elem).addClass(opts.class_name);
 			}
 			if (opts.target != ""){
-				$(elem).attr("target", $(data).valueForKey(opts.target));
+				$(elem).attr("target", opts.target);
 			}
 		});
   }
