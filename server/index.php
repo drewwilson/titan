@@ -11,6 +11,7 @@ $params = array_merge($_GET, $_POST);
 
 if (array_key_exists("_method", $params)) {
 	$method = $params['_method'];
+	unset($params['_method']);
 } else {
 	$method = $_SERVER['REQUEST_METHOD'];
 }
