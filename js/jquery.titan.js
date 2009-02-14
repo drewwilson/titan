@@ -230,30 +230,30 @@
 			var that = this;
 			var data = {};
 			if (model) {
-				data[model] = obj;
+				data = obj;
 				data = $.serialize(data);
 			} else {
 				data = obj;
 			}
 			$.ajax($.extend({
-				url : $.controller.defaults.url,
+				url : $.controller.defaults.url + "/" + model,
 				data : data,
 				type : "POST"
 			}, options));
 		},
 		destroy: function(model, id, options){
 			var data = {};
-			data[model] = {id: id};
+			data = {id: id};
 			$.ajax($.extend({
-				url : $.controller.defaults.url + "?" + $.serialize(data),
+				url : $.controller.defaults.url + "/" + model + "?" + $.serialize(data),
 				type : "DELETE"
 			}, options));
 		},
 		update: function(model, obj, options){
 			var data = {};
-			data[model] = obj;
+			data = obj;
 			$.ajax($.extend({
-				url : $.controller.defaults.url + "?" + $.serialize(data),
+				url : $.controller.defaults.url + "/" + model + "?" + $.serialize(data),
 				contentType : "application/json",
 				type : "PUT"
 			}, options));
@@ -262,14 +262,10 @@
 			var that = this;
 			var data = {};
 			if (conditions && conditions != {}) {
-				data[model] = conditions;
-				data = $.serialize(data);
-				if (data == "") {
-					data = model;
-				}
+				data = $.serialize(conditions);
 			}
 			$.ajax($.extend({
-				url : $.controller.defaults.url,
+				url : $.controller.defaults.url + "/" + model,
 				contentType : "application/json",
 				dataType : "json",
 				type : "GET",
@@ -464,14 +460,15 @@
 
 // Text template support
 (function($){
-	$.expand = function(obj, data) {
+	$.fillIn = function(obj, data) {
+		obj = $.extend({}, obj);
 		for(attr in obj) {
 			if (obj[attr].constructor == Array) {
 				$(obj[attr]).each(function(){
-					$.expand(obj[attr], data);
+					obj[attr] = $.fillIn(obj[attr], data);
 				});
 			} else if (typeof obj[attr] == "object") {
-				$.expand(obj[attr], data);
+				obj[attr] = $.fillIn(obj[attr], data);
 			} else if (typeof obj[attr] == "string") {
 				obj[attr] = obj[attr].replace(/{([^{}]*)}/g,
 					function (tag, name) {
@@ -481,6 +478,7 @@
 				);
 			}
 		}
+		return obj;
 	}
 })(jQuery);
 
@@ -719,10 +717,93 @@
 		return $(this).format(function(elem, data){
 			var ca = $(data).valueForKey(prop);
 			var m = ca.match(/(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/);
-			var t = new Date(m[1], m[2], m[3], m[4], m[5], m[6]).getTime()*0.001;
+			var t = new Date(m[1], m[2]-1, m[3], m[4], m[5], m[6]).getTime()*0.001;
 			$(elem).text(date(format, t));
 		});
 	}
+
+	function number_format( number, decimals, dec_point, thousands_sep ) {
+		// http://kevin.vanzonneveld.net
+		// +   original by: Jonas Raoni Soares Silva (http://www.jsfromhell.com)
+		// +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+		// +     bugfix by: Michael White (http://getsprink.com)
+		// +     bugfix by: Benjamin Lupton
+		// +     bugfix by: Allan Jensen (http://www.winternet.no)
+		// +    revised by: Jonas Raoni Soares Silva (http://www.jsfromhell.com)
+		// +     bugfix by: Howard Yeend
+		// +    revised by: Luke Smith (http://lucassmith.name)
+		// +     bugfix by: Diogo Resende
+		// *     example 1: number_format(1234.56);
+		// *     returns 1: '1,235'
+		// *     example 2: number_format(1234.56, 2, ',', ' ');
+		// *     returns 2: '1 234,56'
+		// *     example 3: number_format(1234.5678, 2, '.', '');
+		// *     returns 3: '1234.57'
+		// *     example 4: number_format(67, 2, ',', '.');
+		// *     returns 4: '67,00'
+ 
+		var n = number, prec = decimals, dec = dec_point, sep = thousands_sep;
+		n = !isFinite(+n) ? 0 : +n;
+		prec = !isFinite(+prec) ? 0 : Math.abs(prec);
+		sep = sep == undefined ? ',' : sep;
+ 
+		var s = n.toFixed(prec),
+			abs = Math.abs(n).toFixed(prec),
+			_, i;
+ 
+		if (abs > 1000) {
+			_ = abs.split(/\D/);
+			i = _[0].length % 3 || 3;
+
+			_[0] = s.slice(0,i + (n < 0)) +
+				_[0].slice(i).replace(/(\d{3})/g, sep+'$1');
+
+			s = _.join(dec || '.');
+		} else {
+			s = abs.replace('.', dec_point);
+		}
+ 
+		return s;
+	}
+
+	$.fn.formatNumber = function(number, options) {
+		var defaults = {
+			decimals: 0,
+			dec_point: ".",
+			thousands_sep: ""
+		};
+		var opts = $.extend(defaults, options);
+		return $(this).format(function(elem, data){
+			var val = $(data).valueForKey(number);
+			decimals = opts.decimals;
+			dec_point = opts.dec_point;
+			thousands_sep = opts.thousands_sep;
+			$(elem).text(number_format(val, decimals, dec_point, thousands_sep));
+		});
+	}
+
+	$.fn.formatLink = function(text, href, options) {
+		var defaults = {
+			title: "",
+			class_name: "",
+			target: ""
+		};
+		return $(this).format(function(elem, data){
+			var opts = $.extend(defaults, {text: text, href: href}, options);
+			opts = $.fillIn(opts, data);
+			$(elem).text(opts.text);
+			$(elem).attr("href", opts.href);
+			if (opts.title != ""){
+				$(elem).attr("title", opts.title);
+			}
+			if (opts.class_name != ""){
+				$(elem).addClass(opts.class_name);
+			}
+			if (opts.target != ""){
+				$(elem).attr("target", opts.target);
+			}
+		});
+  }
 
 	$.fn.formatForm = function(controller, options){
 		return $(this).format(function(elem, data){

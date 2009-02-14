@@ -1,6 +1,6 @@
 module("template", {
 	setup: function() {
-		$.controller.defaults.url = "server/";
+		$.controller.defaults.url = "server/index.php";
 		$.ajaxSetup({timeout: 0});
 	},
 	teardown: function() {
