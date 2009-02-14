@@ -772,6 +772,28 @@
 		});
 	}
 
+	$.fn.formatLink = function(text, href, options) {
+		var defaults = {
+			title: "",
+			class_name: "",
+			target: ""
+		};
+		var opts = $.extend(defaults, options);
+		return $(this).format(function(elem, data){
+			$(elem).text($(data).valueForKey(text));
+			$(elem).attr("href", $(data).valueForKey(href));
+			if (opts.title != ""){
+				$(elem).attr("title", $(data).valueForKey(opts.title));
+			}
+			if (opts.class_name != ""){
+				$(elem).attr("class", $(data).valueForKey(opts.class_name));
+			}
+			if (opts.target != ""){
+				$(elem).attr("target", $(data).valueForKey(opts.target));
+			}
+		});
+  }
+
 	$.fn.formatForm = function(controller, options){
 		return $(this).format(function(elem, data){
 			$(elem).submit(function(event){
