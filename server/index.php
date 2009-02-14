@@ -14,7 +14,6 @@ if (array_key_exists("_method", $params)) {
 } else {
 	$method = $_SERVER['REQUEST_METHOD'];
 }
-
 $segs = split("/", $_SERVER['PATH_INFO']);
 $key = $segs[1];
 $params = $_GET;
