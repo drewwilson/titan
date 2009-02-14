@@ -230,30 +230,30 @@
 			var that = this;
 			var data = {};
 			if (model) {
-				data[model] = obj;
+				data = obj;
 				data = $.serialize(data);
 			} else {
 				data = obj;
 			}
 			$.ajax($.extend({
-				url : $.controller.defaults.url,
+				url : $.controller.defaults.url + "/" + model,
 				data : data,
 				type : "POST"
 			}, options));
 		},
 		destroy: function(model, id, options){
 			var data = {};
-			data[model] = {id: id};
+			data = {id: id};
 			$.ajax($.extend({
-				url : $.controller.defaults.url + "?" + $.serialize(data),
+				url : $.controller.defaults.url + "/" + model + "?" + $.serialize(data),
 				type : "DELETE"
 			}, options));
 		},
 		update: function(model, obj, options){
 			var data = {};
-			data[model] = obj;
+			data = obj;
 			$.ajax($.extend({
-				url : $.controller.defaults.url + "?" + $.serialize(data),
+				url : $.controller.defaults.url + "/" + model + "?" + $.serialize(data),
 				contentType : "application/json",
 				type : "PUT"
 			}, options));
@@ -262,14 +262,10 @@
 			var that = this;
 			var data = {};
 			if (conditions && conditions != {}) {
-				data[model] = conditions;
-				data = $.serialize(data);
-				if (data == "") {
-					data = model;
-				}
+				data = $.serialize(conditions);
 			}
 			$.ajax($.extend({
-				url : $.controller.defaults.url,
+				url : $.controller.defaults.url + "/" + model,
 				contentType : "application/json",
 				dataType : "json",
 				type : "GET",
@@ -719,7 +715,7 @@
 		return $(this).format(function(elem, data){
 			var ca = $(data).valueForKey(prop);
 			var m = ca.match(/(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/);
-			var t = new Date(m[1], m[2], m[3], m[4], m[5], m[6]).getTime()*0.001;
+			var t = new Date(m[1], m[2]-1, m[3], m[4], m[5], m[6]).getTime()*0.001;
 			$(elem).text(date(format, t));
 		});
 	}
