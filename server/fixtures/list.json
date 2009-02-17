@@ -1,7 +1,7 @@
 [
-{"id": 1, "name": "asdf", "date":"2007-01-01 00:00:00"},
-{"id": 2, "name": "asdf", "date":"2008-01-01 00:00:00"},
-{"id": 3, "name": "deleteme", "date":"2009-01-01 00:00:00"},
-{"id": 4, "name": "asdf", "date":"2010-01-01 00:00:00"},
-{"id": 5, "name": "asdf", "date":"2011-01-01 00:00:00"}
+{"id": 1, "name": "asdf", "date":"2007-01-01 00:00:00", "position": 1},
+{"id": 2, "name": "asdf", "date":"2008-01-01 00:00:00", "position": 2},
+{"id": 3, "name": "deleteme", "date":"2009-01-01 00:00:00", "position": 0},
+{"id": 4, "name": "asdf", "date":"2010-01-01 00:00:00", "position": 3},
+{"id": 5, "name": "asdf", "date":"2011-01-01 00:00:00", "position": 4}
 ]

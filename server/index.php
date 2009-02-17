@@ -22,6 +22,17 @@ if (array_key_exists(2, $segs)) {
 	$params['id'] = $segs[2];
 }
 
+function cmp($one, $two)
+{
+	if ($one->position == $two->position) {
+		return 0;
+	} else if ($one->position < $two->position) {
+		return -1;
+	} else {
+		return 1;
+	}
+}
+
 switch($method) {
 	case "GET":
 		$segs = split("/", $_SERVER['PATH_INFO']);
@@ -38,6 +49,10 @@ switch($method) {
 		$data = json_decode($data);
 		$newdata = array();
 		$keepit = true;
+		if (array_key_exists("order", $params)) {
+			usort($data, "cmp");
+			unset($params["order"]);
+		}
 		foreach(array_keys($data) as $idx) {
 			if ( ! empty($params) && is_array($params)) {
 				foreach($params as $name => $value) {
@@ -54,7 +69,6 @@ switch($method) {
 		if (in_array("application/json", explode(",", $_SERVER['HTTP_ACCEPT']))) {
 			header('Content-type: application/json');
 		}
-
 		if (count($newdata) > 0) {
 			echo json_encode($newdata);
 		} else {
@@ -74,6 +88,27 @@ switch($method) {
 		$data = file_get_contents("data/$key.json");
 		$data = json_decode($data);
 		$newdata = array();
+		if (array_key_exists("position", $params)) {
+			$new_pos = $params['position'];
+			$old_pos = -1;
+			foreach(array_keys($data) as $idx) {
+				if ($data[$idx]->id == $params['id']) {
+					$old_pos = $data[$idx]->position;
+				} 
+			}
+			foreach(array_keys($data) as $idx) {
+				$pos = $data[$idx]->position;
+				if ($old_pos > $new_pos) {
+					if($pos >= $new_pos && $pos < $old_pos) {
+						$data[$idx]->position += 1;
+					}
+				} else {
+					if($pos > $old_pos && $pos <= $new_pos) {
+						$data[$idx]->position -= 1;
+					}
+				}
+			}
+		}
 		foreach(array_keys($data) as $idx) {
 			if ($data[$idx]->id == $params['id']) {
 				$newdata[] = (object)array_merge((array)$data[$idx], $params);

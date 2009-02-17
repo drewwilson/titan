@@ -351,6 +351,7 @@
 		$(this).connect("contents", controller, "contents");
 	}
 	$.template.defaultRender = function(elem, data) {
+		$(elem).data("data", data);
 		if ($(elem).data("format")) {
 			return $(elem).data("format").call(this, elem, data);
 		} else {

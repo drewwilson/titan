@@ -12,8 +12,9 @@
 					items = $(container).sortable('option', 'items');
 					$(container).find(items).each(function(idx){
 						if (this === ui.item[0]) {
+							
 							controller.update({
-								id: controller.contents[idx].id,
+								id: $(this).data("data").id,
 								position: $.fn.rearrange.offset + idx});
 						}
 					});
