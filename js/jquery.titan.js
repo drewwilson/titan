@@ -339,12 +339,15 @@
 
 // Template Support
 (function($){
-	$.template = function(root, controller) {
+	$.template = function(root, controller, options) {
 		var tpl = this;
+		var defaults = {};
 		tpl.root = root;
 		tpl.pristine = $(root).cloneTemplate(false)[0];
 		tpl.contents = [];
 		tpl.controller = controller;
+		this.options = $.extend(defaults, options);
+		
 		$(tpl).observe("contents", function(){
 			tpl.render();
 		});
@@ -406,6 +409,9 @@
 						$.template.defaultRender));
 				});
 			}
+			if (this.options.success) {
+				this.options.success();
+			}
 		}
 	}
 	$.visit = function(root, data, fn){
@@ -452,9 +458,9 @@
 	$.fn.format = function(fn) {
 		return $(this).data("format", fn);
 	}
-	$.fn.template = function(controller){
+	$.fn.template = function(controller, options){
 		return this.each(function(){
-			$(this).data("template", new $.template(this, controller))
+			$(this).data("template", new $.template(this, controller, options))
 		});
 	}
 })(jQuery);

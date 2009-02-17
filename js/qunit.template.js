@@ -100,3 +100,16 @@ test("Test complex template", function(){
 	complex = $.controller.array("complex");
 	$("#test-complex").template(complex);
 });
+
+test("Test success callback", function(){
+	expect(2);
+	var list;
+	stop();
+	ok($("#main").template, "check template");
+	$("#main").ajaxStop(function(){
+		$(this).unbind("ajaxStop");
+		start();
+	});
+	list = $.controller.array("list");
+	$("#test-list").template(list, {success: function(){ok(true, "called callback");}});
+});
