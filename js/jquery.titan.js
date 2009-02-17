@@ -717,9 +717,13 @@
 	$.formatDate = function(format, prop) {
 		return function(elem, data){
 			var ca = $(data).valueForKey(prop);
-			var m = ca.match(/(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/);
-			var t = new Date(m[1], m[2]-1, m[3], m[4], m[5], m[6]).getTime()*0.001;
-			$(elem).text(date(format, t));
+			if (ca == undefined || ca == ""){
+				$(elem).text("");
+			} else {
+				var m = ca.match(/(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/);
+				var t = new Date(m[1], m[2]-1, m[3], m[4], m[5], m[6]).getTime()*0.001;
+				$(elem).text(date(format, t));
+			}
 		}
 	}
 	
@@ -774,23 +778,27 @@
 	$.fn.formatNumber = function(number, options) {
 		var defaults = {
 			decimals: 0,
-			dec_point: ".",
-			thousands_sep: ""
+			decPoint: ".",
+			thousandsSep: ""
 		};
 		var opts = $.extend(defaults, options);
 		return $(this).format(function(elem, data){
 			var val = $(data).valueForKey(number);
 			decimals = opts.decimals;
-			dec_point = opts.dec_point;
-			thousands_sep = opts.thousands_sep;
-			$(elem).text(number_format(val, decimals, dec_point, thousands_sep));
+			decPoint = opts.decPoint;
+			thousandsSep = opts.thousandsSep;
+			if (val == undefined || val == "") {
+				$(elem).text("");
+			} else {
+				$(elem).text(number_format(val, decimals, decPoint, thousandsSep));
+			}
 		});
 	}
 
 	$.fn.formatLink = function(text, href, options) {
 		var defaults = {
 			title: "",
-			class_name: "",
+			className: "",
 			target: ""
 		};
 		return $(this).format(function(elem, data){
@@ -801,8 +809,8 @@
 			if (opts.title != ""){
 				$(elem).attr("title", opts.title);
 			}
-			if (opts.class_name != ""){
-				$(elem).addClass(opts.class_name);
+			if (opts.className != ""){
+				$(elem).addClass(opts.className);
 			}
 			if (opts.target != ""){
 				$(elem).attr("target", opts.target);
