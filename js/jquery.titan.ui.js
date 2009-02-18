@@ -4,7 +4,6 @@
 			var items;
 			var container = this;
 			var user_update;
-				console.log(typeof controller);
 			if (typeof controller == "string") {
 				return $(this).sortable(controller, options);
 			}
