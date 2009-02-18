@@ -291,11 +291,17 @@
 				}
 			});
 		},
-		update: function(obj) {
+		update: function(obj, options) {
 			var that = this;
+			var defaults = {
+				autoRetrieve: true
+			};
+			options = $.extend(defaults, options);
 			$.controller.update(that.model, obj, {
 				success : function(data) {
-					that.retrieve();
+					if (options.autoRetrieve) {
+						that.retrieve();
+					}
 				}
 			});
 		},
