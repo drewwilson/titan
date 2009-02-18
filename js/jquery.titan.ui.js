@@ -11,7 +11,6 @@
 			if (options) {
 				user_update = options.update;
 				if (options.autoRetrieve !== undefined) {
-					console.log(options);
 					autoRetrieve = options.autoRetrieve;
 					delete options.autoRetrieve;
 				}
