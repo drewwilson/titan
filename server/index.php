@@ -38,8 +38,13 @@ switch($method) {
 		$segs = split("/", $_SERVER['PATH_INFO']);
 		$key = $segs[1];
 		$params = $_GET;
+		$doCount = false;
 		if (array_key_exists(2, $segs)) {
-			$params['id'] = $segs[2];
+			if ($segs[2] == "count") {
+				$doCount = true;
+			} else {
+				$params['id'] = $segs[2];
+			}
 		}
 		if ( ! file_exists("data/$key.json")) {
 			copy("fixtures/$key.json", "data/$key.json");
@@ -70,7 +75,11 @@ switch($method) {
 			header('Content-type: application/json');
 		}
 		if (count($newdata) > 0) {
-			echo json_encode($newdata);
+			if ($doCount) {
+				echo count($newdata);
+			} else {
+				echo json_encode($newdata);
+			}
 		} else {
 			echo "[]";
 		}
