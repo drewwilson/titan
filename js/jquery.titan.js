@@ -254,7 +254,7 @@
 			data = obj;
 			$.ajax($.extend({
 				url : $.controller.defaults.url + "/" + model,
-				data: $.serialize(data)
+				data: $.serialize(data),
 				contentType : "application/json",
 				type : "PUT"
 			}, options));

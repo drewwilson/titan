@@ -85,6 +85,10 @@ switch($method) {
 		fclose($f);
 		break;
 	case "PUT":
+		parse_str(file_get_contents('php://input'), $_PUT);
+		foreach ($_PUT as $prop=>$val) {
+			$params[$prop] = $val;
+		}
 		$data = file_get_contents("data/$key.json");
 		$data = json_decode($data);
 		$newdata = array();
