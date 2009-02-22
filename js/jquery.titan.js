@@ -1,5 +1,7 @@
 // KVC/KVO/Binding support
 (function($){
+	var willChangeStack = [];
+	var didChangeStack = [];
 	function makeChain(target, keys, fn, origTarget, origPath) {
 		var key = keys.shift();
 		if (keys.length > 0) {
@@ -23,22 +25,45 @@
 	}
 	
 	$.extend({
-		valueForKey: function(obj, key, value){
-			if ($.isFunction(obj[key])) {
-				return obj[key].call(obj, key, value);
-			} else {
-				if (value !== undefined) {
-					if (obj[key] !== value) {
-						var old = obj[key];
-						obj[key] = value;
-						$(obj).data("propertyRevision", $(obj).data("propertyRevision")+1);
-						$(obj).trigger(key + "-changed", {
-							oldValue: old,
-							newValue: obj[key]});
-					}
-				}
-				return obj[key];
+		willChangeValueForKey: function(obj, key) {
+			willChangeStack.push({obj: obj, key: key, val: $(obj).valueForKey(key)});
+		},
+		didChangeValueForKey: function(obj, key) {
+			var changed = willChangeStack.pop();
+			if (changed.key != key) {
+				console.log("Expected didChangeValueForKey: "+
+					changed.key + " but got " + key);
 			}
+			didChangeStack.push(changed);
+			if (willChangeStack.length == 0) {
+				var changes = didChangeStack;
+				didChangeStack = [];
+				$(changes).each(function(){
+					if ($(this.obj).valueForKey(this.key) !== this.val) {
+						$(this.obj).trigger(this.key + "-changed", {
+							oldValue: this.val,
+							newValue: $(this.obj).valueForKey(this.key)});
+					}
+				});
+			}
+		},
+		valueForKey: function(obj, key, value) {
+			if ((value != undefined) && $(obj).automaticallyNotifiesObserversForKey(key)) {
+				$.willChangeValueForKey(obj, key);
+			}
+			var val;
+			if ($.isFunction(obj[key])) {
+				val = obj[key].call(obj, key, value);
+			} else {
+				if (value != undefined) {
+					obj[key] = value;
+				}
+				val = obj[key];
+			}
+			if ((value != undefined) && $(obj).automaticallyNotifiesObserversForKey(key)) {
+				$.didChangeValueForKey(obj, key);
+			}
+			return val;
 		},
 		valueForKeyPath: function(obj, path, value){
 			var keys = path.split(".");
@@ -46,7 +71,7 @@
 			while(keys.length > 1) {
 				key = keys.shift();
 				obj = $(obj).valueForKey(key);
-				if (obj === undefined) {
+				if (obj == undefined) {
 					return undefined;
 				}
 			}
@@ -85,26 +110,29 @@
 				to: to,
 				fromAttr: fromAttr,
 				toAttr: toAttr,
-				lastToPropertyRevision: 0,
-				lastFromPropertyRevision: 0
+				updateTo: true,
+				updateFrom: true
 			};
 			$(from).data(fromAttr + $.data(to) + toAttr, binding);
 			binding.fromFn = $(from).observe(fromAttr, function(){
-				if (from.propertyRevision <= binding.lastFromPropertyRevision) {
+				if (binding.updateTo == false) {
+					binding.updateTo = true;
+					binding.updateFrom = true;
 					return;
 				}
-				binding.lastFromPropertyRevision = $(from).data("propertyRevision");
+				binding.updateFrom = false;
 				$(to).valueForKeyPath(toAttr, $(from).valueForKeyPath(fromAttr));
 			});
 			binding.toFn = $(to).observe(toAttr, function(){
-				if ($(to).propertyRevision <= binding.lastToPropertyRevision) {
+				if (binding.updateFrom == false) {
+					binding.updateTo = true;
+					binding.updateFrom = true;
 					return;
 				}
-				binding.lastToPropertyRevision = $(to).data("propertyRevision");
+				binding.updateTo = false; // don't do it again
 				$(from).valueForKeyPath(fromAttr, $(to).valueForKeyPath(toAttr));
 			});
-			binding.lastToPropertyRevision = $(to).data("propertyRevision");
-			binding.lastFromPropertyRevision = $(from).data("propertyRevision");
+			binding.updateTo = false;
 			$(from).valueForKeyPath(fromAttr, $(to).valueForKeyPath(toAttr));
 		},
 		disconnect: function(obj, fromAttr, to, toAttr) {
@@ -114,6 +142,9 @@
 		}
 	});
 	$.fn.extend({
+		automaticallyNotifiesObserversForKey: function() {
+			return true;
+		},
 		valueForKey: function(key, value){
 			if (value === undefined) {
 				return $.valueForKey(this[0], key);
