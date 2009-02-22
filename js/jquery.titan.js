@@ -48,7 +48,9 @@
 			}
 		},
 		valueForKey: function(obj, key, value) {
-			if ((value != undefined) && $(obj).automaticallyNotifiesObserversForKey(key)) {
+			if ((value != undefined) &&
+				(obj.automaticallyNotifiesObserversForKey === undefined ||
+					obj.automaticallyNotifiesObserversForKey(key))) {
 				$.willChangeValueForKey(obj, key);
 			}
 			var val;
@@ -60,7 +62,9 @@
 				}
 				val = obj[key];
 			}
-			if ((value != undefined) && $(obj).automaticallyNotifiesObserversForKey(key)) {
+			if ((value != undefined) &&
+				(obj.automaticallyNotifiesObserversForKey === undefined ||
+					obj.automaticallyNotifiesObserversForKey(key))) {
 				$.didChangeValueForKey(obj, key);
 			}
 			return val;
@@ -142,9 +146,6 @@
 		}
 	});
 	$.fn.extend({
-		automaticallyNotifiesObserversForKey: function() {
-			return true;
-		},
 		valueForKey: function(key, value){
 			if (value === undefined) {
 				return $.valueForKey(this[0], key);
