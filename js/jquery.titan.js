@@ -350,7 +350,7 @@
 		var tpl = this;
 		var defaults = {};
 		tpl.root = root;
-		tpl.pristine = $(root).cloneTemplate(false)[0];
+		tpl.pristine = $(root).cloneTemplate(true)[0];
 		tpl.contents = [];
 		tpl.controller = controller;
 		this.options = $.extend(defaults, options);
@@ -375,7 +375,7 @@
 							$(curData).each(function(){
 								$(tmp).append(
 									$.visit(
-										$(elem).cloneTemplate(false)[0],
+										$(elem).cloneTemplate(true)[0],
 										this,
 										$.template.defaultRender));
 							});
@@ -411,7 +411,7 @@
 				$(tpl.root).empty();
 				$(contents).each(function(i){
 					$(tpl.root).append($.visit(
-						$(tpl.pristine).cloneTemplate(false)[0],
+						$(tpl.pristine).cloneTemplate(true)[0],
 						this,
 						$.template.defaultRender));
 				});
