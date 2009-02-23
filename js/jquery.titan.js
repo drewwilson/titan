@@ -452,7 +452,12 @@
 							$(elem).append($(tmp).contents());
 							return false;
 						} else {
-							$(elem).text(curData);
+							var flat = classes.toString();
+							if (/ti_html/.test(classes)) {
+								$(elem).html($(curData));
+							} else {
+								$(elem).text(curData);
+							}
 							return true;
 						}
 					}
