@@ -454,7 +454,7 @@
 						} else {
 							var flat = classes.toString();
 							if (/opt_html/.test(classes)) {
-								$(elem).html($(curData));
+								$(elem).html(curData);
 							} else {
 								$(elem).text(curData);
 							}
