@@ -453,7 +453,7 @@
 							return false;
 						} else {
 							var flat = classes.toString();
-							if (/ti_html/.test(classes)) {
+							if (/opt_html/.test(classes)) {
 								$(elem).html($(curData));
 							} else {
 								$(elem).text(curData);
