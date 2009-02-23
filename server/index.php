@@ -58,17 +58,33 @@ switch($request->method) {
 	case "GET":
 		$newdata = array();
 		$keepit = true;
+		$limit = 100000;
+		$offset = 0;
 		if (array_key_exists("order", $request->params)) {
 			usort($request->data, "cmp");
 			unset($request->params["order"]);
 		}
+		if (array_key_exists("limit", $request->params)) {
+			$limit = $request->params["limit"];
+			unset($request->params["limit"]);
+		}
+		if (array_key_exists("offset", $request->params)) {
+			$offset = $request->params["offset"];
+			unset($request->params["offset"]);
+		}
 		foreach(array_keys($request->data) as $idx) {
-			if ( ! empty($request->params) && is_array($request->params)) {
-				foreach($request->params as $name => $value) {
-					if ($request->data[$idx]->{$name} != $value) {
-						$keepit = false;
+			if ($offset == 0 && $limit > 0) {
+				$limit = $limit - 1;
+				if ( ! empty($request->params) && is_array($request->params)) {
+					foreach($request->params as $name => $value) {
+						if ($request->data[$idx]->{$name} != $value) {
+							$keepit = false;
+						}
 					}
 				}
+			} else {
+				$offset = $offset - 1;
+				$keepit = false;
 			}
 			if ($keepit) {
 				$newdata[] = $request->data[$idx];

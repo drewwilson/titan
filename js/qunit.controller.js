@@ -108,3 +108,24 @@ test("Test master-detail controllers", function(){
 	ok(master, "master controller instantiated");
 });
 
+test("Test paging controllers", function(){
+	stop();
+	var list;
+	$("#test-list").ajaxStop(function(){
+		$(this).unbind("ajaxStop");
+		$("#test-list").ajaxStop(function(){
+			$(this).unbind("ajaxStop");
+			equals($(list).valueForKey("contents").length, 3, "count list objects");
+			equals($(list).valueForKey("page"), 19, "check current page is 19");
+			equals($(list).valueForKey("pages"), 19, "check pages is 19");
+			equals($(list).valueForKey("per_page"), 5, "check current page is 2");
+			equals($(list).valueForKey("offset"), 54, "check item offset is 4");
+			start();
+		});
+		equals($(list).valueForKey("contents").length, 5, "count list objects");
+		equals($(list).valueForKey("page"), 1, "check current page is 1");
+		$(list).valueForKey("page", 19);
+	});
+	list = $.controller.array("lots", {paginate: {per_page: 5, overlap: 2}});
+	ok(list, "list controller instantiated");
+});

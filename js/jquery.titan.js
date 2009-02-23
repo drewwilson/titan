@@ -246,6 +246,13 @@
 							});
 						}
 					}
+					if (conditions.paginate) {
+						this.paginating = true;
+						this.overlap = conditions.paginate.overlap;
+						this.per_page = conditions.paginate.per_page;
+						this._page = 0;
+						delete this.conditions.paginate;
+					}
 				}
 				this.retrieve();
 			} else {
@@ -308,6 +315,13 @@
 	};
 	$.extend($.controller.array.prototype, {
 		root: "",
+		page: function(key, value) {
+			if (value !== undefined) {
+				this._page = value;
+				this.retrieve();
+			}
+			return this._page;
+		},
 		create: function(obj) {
 			var that = this;
 			$.controller.create(that.model, obj, {
@@ -342,6 +356,23 @@
 			var that = this;
 			var conditions = {};
 
+			function onSuccess(data) {
+				var found = false;
+				if (that._last_id) {
+					$(data).each(function(){
+						if (that._last_id  == this.id) {
+							found = true;
+							$(that).valueForKey("selection", this);
+							return false;
+						}
+					});
+				}
+				if ( ! found && data.length > 0) {
+					$(that).valueForKey("selection", data[0]);
+				}
+				$(that).valueForKey("contents", data);
+			}
+
 			if (that.master) {
 				var selection = $(that.master).valueForKey("selection");
 				if (selection) {
@@ -354,24 +385,30 @@
 			if ($(that).valueForKey("selection") !== undefined) {
 				that._last_id = $(that).valueForKeyPath("selection.id");
 			}
-			$.controller.retrieve(that.model, $.extend(conditions, this.conditions), {
-				success : function(data) {
-					var found = false;
-					if (that._last_id) {
-						$(data).each(function(){
-							if (that._last_id  == this.id) {
-								found = true;
-								$(that).valueForKey("selection", this);
-								return false;
-							}
+			conditions = $.extend(conditions, this.conditions);
+			if (this.paginating) {
+				$.controller.retrieve(that.model + "/count", conditions, {
+					success : function(total) {
+						that.total = total;
+						if (total > 0 && that._page === 0) {
+							that._page = 1;
+						}
+						var extra = that.overlap * (that.total / that.per_page);
+						that.pages = parseInt(that.total / (that.per_page - that.overlap));
+						that.offset = (that._page-1)*(that.per_page-that.overlap);
+						conditions['limit'] = that.per_page;
+						conditions['offset'] = that.offset;
+						$.controller.retrieve(that.model, conditions, {
+							success : onSuccess
 						});
 					}
-					if ( ! found && data.length > 0) {
-						$(that).valueForKey("selection", data[0]);
-					}
-					$(that).valueForKey("contents", data);
-				}
-			});
+				});
+
+			} else {
+				$.controller.retrieve(that.model, conditions, {
+					success : onSuccess
+				});
+			}
 		}
 	});
 })(jQuery);
