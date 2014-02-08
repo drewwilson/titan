@@ -1166,7 +1166,7 @@ function date_format(format, data, tzoffset) {
 
 //String Truncation
 function truncate(limit, post) {
-	if(!limit) { post = 10; }
+	if(!limit) { limit = 10; }
 	if(!post) { post = "..."; }
 	var s = this.toString();
 	if(s.length > limit){
